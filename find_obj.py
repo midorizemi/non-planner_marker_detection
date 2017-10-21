@@ -25,7 +25,7 @@ FLANN_INDEX_KDTREE = 1  # bug: flann enums are missing
 FLANN_INDEX_LSH    = 6
 
 
-def init_feature(name):
+def init_feature(name: object) -> object:
     chunks = name.split('-')
     if chunks[0] == 'sift':
         detector = cv2.xfeatures2d.SIFT_create()
