@@ -32,7 +32,7 @@ from multiprocessing.pool import ThreadPool
 # local modules
 from common import Timer
 from find_obj import init_feature, filter_matches, explore_match
-
+import make_splitmap as mks
 
 def affine_skew(tilt, phi, img, mask=None):
     '''
@@ -106,7 +106,9 @@ def affine_detect(detector, img, mask=None, pool=None):
     print()
     return keypoints, np.array(descrs)
 
-def split_affine_detected(keypoints, descrs, split_tmp_img, splt_num):
+def split_affine_detected(keypoints, descrs, splt_num):
+    tmp = mks.TemplateInfo()
+    split_tmp_img = mks.make_splitmap(tmp)
     global descrs_list
     if isinstance(descrs, np.ndarray):
         descrs_list = descrs.tolist()
