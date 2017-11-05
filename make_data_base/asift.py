@@ -22,17 +22,17 @@ USAGE
 # Python 2/3 compatibility
 from __future__ import print_function
 
-import numpy as np
-import cv2
-
 # built-in modules
 import itertools as it
 from multiprocessing.pool import ThreadPool
 
+import cv2
+import numpy as np
+
 # local modules
-from common import Timer
-from find_obj import init_feature, filter_matches, explore_match
-import make_splitmap as mks
+from commons.common import Timer
+from commons.find_obj import init_feature, filter_matches, explore_match
+
 
 def affine_skew(tilt, phi, img, mask=None):
     '''
@@ -106,41 +106,18 @@ def affine_detect(detector, img, mask=None, pool=None):
     print()
     return keypoints, np.array(descrs)
 
-def split_affine_detected(keypoints, descrs, splt_num):
-    tmp = mks.TemplateInfo()
-    split_tmp_img = mks.make_splitmap(tmp)
-    global descrs_list
-    if isinstance(descrs, np.ndarray):
-        descrs_list = descrs.tolist()
-    splits_k = [[] for row in range(splt_num)]
-    splits_d = [[] for row in range(splt_num)]
-
-    assert isinstance(keypoints, list)
-    assert isinstance(descrs_list, list)
-    for keypoint, descr in zip(keypoints, descrs_list):
-        x, y = keypoint.pt
-        splits_k[split_tmp_img[x, y]].extend(keypoint)
-        splits_d[split_tmp_img[x, y]].extend(descr)
-
-    for i, split_d in enumerate(splits_d):
-        splits_d[i] = np.array(split_d)
-
-    return splits_k, splits_d
-
-
-
 if __name__ == '__main__':
     print(__doc__)
 
     import sys, getopt
     opts, args = getopt.getopt(sys.argv[1:], '', ['feature='])
     opts = dict(opts)
-    feature_name = opts.get('--feature', 'sift')
+    feature_name = opts.get('--feature', 'brisk-flann')
     try:
         fn1, fn2 = args
     except:
-        fn1 = 'inputs/test/aero1.jpg'
-        fn2 = 'inputs/test/aero3.jpg'
+        fn1 = '../data/aero1.jpg'
+        fn2 = '../data/aero3.jpg'
 
     img1 = cv2.imread(fn1, 0)
     img2 = cv2.imread(fn2, 0)
@@ -184,4 +161,3 @@ if __name__ == '__main__':
     match_and_draw('affine find_obj')
     cv2.waitKey()
     cv2.destroyAllWindows()
-

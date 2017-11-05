@@ -1,12 +1,10 @@
+import math
+
 import cv2
 import numpy as np
-import math
-import matplotlib
-import matplotlib.pyplot as plt
+
 
 # local modules
-from common import Timer
-from find_obj import init_feature, filter_matches, explore_match
 
 def calc_asimulation_parameters(tl_max=6, phi_max=180):
     ts = [math.pow(math.sqrt(2), 0.5*tl) for tl in range(tl_max)]
