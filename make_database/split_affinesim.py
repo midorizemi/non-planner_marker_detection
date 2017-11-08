@@ -51,9 +51,11 @@ def split_kd(keypoints, descrs, splt_num):
     for keypoint, descr in zip(keypoints, descrs_list):
         x, y = np.int32(keypoint.pt)
         if x < 0 or x >= 800 or y < 0 or y >= 600:
-            continue
-        splits_k[split_tmp_img[y, x][0]].append(keypoint)
-        splits_d[split_tmp_img[y, x][0]].extend(descr)
+            print(x, y)
+            pass
+        else:
+            splits_k[split_tmp_img[y, x][0]].append(keypoint)
+            splits_d[split_tmp_img[y, x][0]].append(descr)
 
     for i, split_d in enumerate(splits_d):
         splits_d[i] = np.array(split_d)
@@ -125,18 +127,19 @@ if __name__ == '__main__':
         statuses = []
         i =0
         for kps, desc in zip(s_kp, s_desc):
-            asset isinstance(desc, type(desc2))
+            assert type(desc) == type(desc2), "EORROR TYPE"
             with Timer('matching'):
-                raw_matches = matcher.knnMatch(desc2, trainDescriptors=desc, k=2)#2
+                raw_matches = matcher.knnMatch(desc2, trainDescriptors=desc1, k=2)#2
             p1, p2, kp_pairs = filter_matches(kp1, kp2, raw_matches)
             if len(p1) >= 4:
-                Hs[i], status = cv2.findHomography(p1, p2, cv2.RANSAC, 5.0)
+                H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 5.0)
                 print('%d / %d  inliers/matched' % (np.sum(status), len(status)))
                 # do not draw outliers (there will be a lot of them)
                 list_kp_pairs.extend([kpp for kpp, flag in zip(kp_pairs, status) if flag])
             else:
-                Hs[i], status = None, None
+                H, status = None, None
                 print('%d matches found, not enough for homography estimation' % len(p1))
+            Hs.append(H)
             statuses.extend(status)
             i+=1
         vis = show(win, img1, img2, list_kp_pairs, statuses, Hs)
