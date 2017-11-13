@@ -42,7 +42,7 @@ map_y = np.zeros(img.shape[:2], np.float32)
 rows,cols = img.shape[:2]
 while(True):
     update()
-    dst = cv2.remap(img,map_x,map_y,cv2.INTER_LINEAR)
+    dst = cv2.remap(img,map_x,map_y,1.0)
     cv2.imshow('dst',dst)
     if cv2.waitKey(1000)==27:
         break

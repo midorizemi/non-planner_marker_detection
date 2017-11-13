@@ -4,12 +4,11 @@ This is unit test split affine simulation sctipt
 
 import unittest
 
-import itertools as it
-from multiprocessing.pool import ThreadPool
-
 from commons.find_obj import init_feature, filter_matches
 from commons.common import Timer
+from commons.affine_base import affine_detect
 from make_database import split_affinesim as splta
+from commons.custom_find_obj import explore_match_for_meshes as show
 
 import cv2
 import numpy as np
@@ -18,6 +17,7 @@ import numpy as np
 from multiprocessing.pool import ThreadPool
 
 class TestSplitAffineSim(unittest.TestCase):
+
     def setUp(self):
         """ Set up befor test
         Using templates is qr.png
@@ -32,53 +32,43 @@ class TestSplitAffineSim(unittest.TestCase):
         try:
             fn1, fn2 = args
         except:
-            fn1 = '~/PycharmProjects/makeDB/inputs/templates/qrmarker.png'
-            fn2 = '~/PycharmProjects/makeDB/inputs/test/qrmarker.png'
+            fn1 = '/home/tiwasaki/PycharmProjects/makeDB/inputs/templates/qrmarker.png'
+            fn2 = '/home/tiwasaki/PycharmProjects/makeDB/inputs/test/mltf_qrmarker/smpl_0.000000_0.000000.png'
 
         self.img1 = cv2.imread(fn1, 0)
         self.img2 = cv2.imread(fn2, 0)
         self.detector, self.matcher = init_feature(feature_name)
         self.splt_num = 64
+        if self.img1 is None:
+            print('Failed to load fn1:', fn1)
+            sys.exit(1)
 
-    def test_a(self):
-        cv2.imshow('test', self.img1)
-        cv2.waitKey()
-        self.assertIsNotNone(self.img1, "画像がありません")
-        self.assertIsNotNone(self.img2, "画像がありません")
-        self.assertIsNotNone(self.img2, "無効な画像特徴名を指定しています")
+        if self.img2 is None:
+            print('Failed to load fn2:', fn2)
+            sys.exit(1)
+
+        if self.detector is None:
+            print('unknown feature:', feature_name)
+            sys.exit(1)
 
     def test_splitkd(self):
-        self.assertIsNotNone(self.img1, "画像がありません")
-        self.assertIsNotNone(self.img2, "画像がありません")
-        self.assertIsNotNone(self.img2, "無効な画像特徴名を指定しています")
-        kp, desc = splta.affine_detect(self.detector, self.splt_num, self.img1)
+        kp, desc = affine_detect(self.detector, self.img1, None, None)
         s_kp, s_desc = splta.split_kd(kp, desc, self.splt_num)
         self.assertIsNotNone(s_kp)
         self.assertIsNotNone(s_desc)
-        self.assertEqual(len(s_kp), self.split_num)
-        self.assertEqual(len(s_desc), self.split_num)
-        for i, kp in enumerate(s_kp):
+        self.assertEqual(len(s_kp), 64)
+        self.assertEqual(len(s_desc), 64)
+        for kp, desc in zip(s_kp, s_desc):
             if not kp:
-                self.assertTrue(True)
+                self.assertTrue(False, "Keypoints is Empty")
             else:
-                self.assertTrue(False)
-            if not s_desc[i]:
                 self.assertTrue(True)
-            else:
-                self.assertTrue(False)
+            self.assertNotEqual(desc.size, 0, "Descriptor is Empty")
 
-    @unittest.skip("SKIP")
-    def test_split_affine(self):
-        s_kp, s_desc = splta.affine_detect_into_mesh(self.detector, self.splt_num, self.img1)
-        self.assertEqual(len(s_kp), self.split_num)
-        self.assertEqual(len(s_desc), self.split_num)
-
-    @unittest.skip("SKIP")
     def test_result(self):
         pool = ThreadPool(processes=cv2.getNumberOfCPUs())
-        kp1, desc1 = splta.affine_detect(self.detector, self.img1, pool=pool)
-        s_kp, s_desc = splta.split_kd(kp1, desc1, self.splt_num)
-        kp2, desc2 = splta.affine_detect(self.detector, self.img2, pool=pool)
+        s_kp, s_desc = splta.affine_detect_into_mesh(self.detector, self.splt_num, self.img1, pool=pool)
+        kp2, desc2 = affine_detect(self.detector, self.img2, pool=pool)
         len_s_kp = 0
         for kps in s_kp:
             len_s_kp += len(kps)
@@ -86,7 +76,7 @@ class TestSplitAffineSim(unittest.TestCase):
 
         def calc_H(kp1, kp2, desc1, desc2):
             with Timer('matching'):
-                raw_matches = splta.matcher.knnMatch(desc1, trainDescriptors=desc2, k=2)#2
+                raw_matches = self.matcher.knnMatch(desc2, desc1, 2)#2
             p1, p2, kp_pairs = filter_matches(kp1, kp2, raw_matches)
             if len(p1) >= 4:
                 H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 5.0)
@@ -103,11 +93,24 @@ class TestSplitAffineSim(unittest.TestCase):
             list_kp_pairs = []
             Hs = []
             statuses = []
-            for i, kps in enumerate(s_kp):
-                kp_pairs, Hs[i], status = calc_H(kps, kp2, s_desc[i], desc2)
-                list_kp_pairs.extend(kp_pairs)
+            i =0
+            for kps, desc in zip(s_kp, s_desc):
+                assert type(desc) == type(desc2), "EORROR TYPE"
+                with Timer('matching'):
+                    raw_matches = self.matcher.knnMatch(desc2, trainDescriptors=desc, k=2)#2
+                p2, p1, kp_pairs = filter_matches(kp2, kps, raw_matches)
+                if len(p1) >= 4:
+                    H, status = cv2.findHomography(p2, p1, cv2.RANSAC, 5.0)
+                    print('%d / %d  inliers/matched' % (np.sum(status), len(status)))
+                    # do not draw outliers (there will be a lot of them)
+                    list_kp_pairs.extend([kpp for kpp, flag in zip(kp_pairs, status) if flag])
+                else:
+                    H, status = None, None
+                    print('%d matches found, not enough for homography estimation' % len(p1))
+                Hs.append(H)
                 statuses.extend(status)
-            vis = self.show(win, self.img1, self.img2, list_kp_pairs, statuses, Hs)
+                i+=1
+            vis = show(win, self.img2, self.img1, list_kp_pairs, statuses, Hs)
 
 
         match_and_draw('affine find_obj')

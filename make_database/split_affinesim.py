@@ -58,12 +58,12 @@ def split_kd(keypoints, descrs, splt_num):
             splits_d[split_tmp_img[y, x][0]].append(descr)
 
     for i, split_d in enumerate(splits_d):
-        splits_d[i] = np.array(split_d)
+        splits_d[i] = np.array(split_d, dtype=np.float32)
 
     return splits_k, splits_d
 
-def affine_detect_into_mesh(detector, split_num, img1, pool):
-    kp, desc = affine_detect(detector, img1, pool=pool)
+def affine_detect_into_mesh(detector, split_num, img1, mask=None, pool=None):
+    kp, desc = affine_detect(detector, img1, mask, pool=pool)
     return split_kd(kp, desc, split_num)
 
 if __name__ == '__main__':
@@ -76,8 +76,8 @@ if __name__ == '__main__':
     try:
         fn1, fn2 = args
     except:
-        fn1 = 'inputs/test/aero1.jpg'
-        fn2 = 'inputs/test/aero3.jpg'
+        fn1 = 'inputs/templates/qrmarker.png'
+        fn2 = 'inputs/test/qrmarker.png'
 
     img1 = cv2.imread(fn1, 0)
     img2 = cv2.imread(fn2, 0)
@@ -129,10 +129,10 @@ if __name__ == '__main__':
         for kps, desc in zip(s_kp, s_desc):
             assert type(desc) == type(desc2), "EORROR TYPE"
             with Timer('matching'):
-                raw_matches = matcher.knnMatch(desc2, trainDescriptors=desc1, k=2)#2
-            p1, p2, kp_pairs = filter_matches(kp1, kp2, raw_matches)
+                raw_matches = matcher.knnMatch(desc2, trainDescriptors=desc, k=2)#2
+            p2, p1, kp_pairs = filter_matches(kp2, kps, raw_matches)
             if len(p1) >= 4:
-                H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 5.0)
+                H, status = cv2.findHomography(p2, p1, cv2.RANSAC, 5.0)
                 print('%d / %d  inliers/matched' % (np.sum(status), len(status)))
                 # do not draw outliers (there will be a lot of them)
                 list_kp_pairs.extend([kpp for kpp, flag in zip(kp_pairs, status) if flag])
@@ -142,7 +142,7 @@ if __name__ == '__main__':
             Hs.append(H)
             statuses.extend(status)
             i+=1
-        vis = show(win, img1, img2, list_kp_pairs, statuses, Hs)
+        vis = show(win, img2, img1, list_kp_pairs, statuses, Hs)
 
 
     match_and_draw('affine find_obj')

@@ -58,6 +58,25 @@ def a_detect(p, detector, img):
 def w_a_detect(args):
     a_detect(*args)
 
+def calc_affine_params(simu: str ='default') -> list:
+    """
+    Calculation affine simulation parameter tilt and phi
+    You get list object of sets (tilt, phi) as taple
+    :param simu: set simulation taype
+    :return: list of taple
+    """
+    params = [(1.0, 0.0)]
+    if simu == 'default':
+        for t in 2**(0.5*np.arange(1, 6)):
+            for phi in np.arange(0, 180, 72.0 / t):
+                params.append((t, phi))
+
+    if simu == 'test':
+        pass
+
+    return params
+
+
 def affine_detect(detector, img, mask=None, pool=None):
     '''
     affine_detect(detector, img, mask=None, pool=None) -> keypoints, descrs
@@ -68,10 +87,7 @@ def affine_detect(detector, img, mask=None, pool=None):
 
     ThreadPool object may be passed to speedup the computation.
     '''
-    params = [(1.0, 0.0)]
-    for t in 2**(0.5*np.arange(1, 6)):
-        for phi in np.arange(0, 180, 72.0 / t):
-            params.append((t, phi))
+    params = calc_affine_params('default')
 
     def f(p):
         t, phi = p
