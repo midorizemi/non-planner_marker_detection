@@ -6,6 +6,7 @@ import itertools as it
 
 import cv2
 import numpy as np
+import math
 
 # local modules
 from commons.common import Timer
@@ -66,18 +67,37 @@ def calc_affine_params(simu: str ='default') -> list:
     :return: list of taple
     """
     params = [(1.0, 0.0)]
-    if simu == 'default':
+    if simu == 'default' or simu is None:
         for t in 2**(0.5*np.arange(1, 6)):
             for phi in np.arange(0, 180, 72.0 / t):
                 params.append((t, phi))
 
+    if simu == 'degrees':
+        """半周する"""
+        for t in np.reciprocal(np.cos(np.radians(np.arange(10, 90, 10)))):
+            for phi in np.arange(0, 180, 20):
+                params.append((t, phi))
+
+    if simu == 'degrees-full':
+        """一周する"""
+        for t in np.reciprocal(np.cos(np.radians(np.arange(10, 90, 10)))):
+            for phi in np.arange(0, 360, 20):
+                params.append((t, phi))
+
+    if simu == 'test2':
+        print("This simulation is Test2 type")
+        for t in 2**(0.5*np.arange(1, 3)):
+            for phi in np.arange(0, 180, 72.0 / t):
+                params.append((t, phi))
+
     if simu == 'test':
+        print("This simulation is Test type")
         pass
 
     return params
 
 
-def affine_detect(detector, img, mask=None, pool=None):
+def affine_detect(detector, img, mask=None, pool=None, simu_param=None):
     '''
     affine_detect(detector, img, mask=None, pool=None) -> keypoints, descrs
 
@@ -87,7 +107,7 @@ def affine_detect(detector, img, mask=None, pool=None):
 
     ThreadPool object may be passed to speedup the computation.
     '''
-    params = calc_affine_params('default')
+    params = calc_affine_params(simu_param)
 
     def f(p):
         t, phi = p

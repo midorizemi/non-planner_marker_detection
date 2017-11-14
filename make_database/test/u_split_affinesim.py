@@ -52,19 +52,26 @@ class TestSplitAffineSim(unittest.TestCase):
             sys.exit(1)
 
     def test_splitkd(self):
-        kp, desc = affine_detect(self.detector, self.img1, None, None)
+        kp, desc = affine_detect(self.detector, self.img1, None, None, simu_param='test2')
         s_kp, s_desc = splta.split_kd(kp, desc, self.splt_num)
         self.assertIsNotNone(s_kp)
         self.assertIsNotNone(s_desc)
         self.assertEqual(len(s_kp), 64)
         self.assertEqual(len(s_desc), 64)
-        for kp, desc in zip(s_kp, s_desc):
-            if not kp:
+        lenskp = 0
+        lensdescr = 0
+        for skp, sdesc in zip(s_kp, s_desc):
+            if not skp:
                 self.assertTrue(False, "Keypoints is Empty")
             else:
+                lenskp += len(skp)
                 self.assertTrue(True)
-            self.assertNotEqual(desc.size, 0, "Descriptor is Empty")
+            self.assertNotEqual(sdesc.size, 0, "Descriptor is Empty")
+            lensdescr += sdesc.shape[0]
+        self.assertEqual(lenskp, len(kp), "Some keypoints were droped out.")
+        self.assertEqual(lensdescr, len(desc), "Some descriptors were droped out.")
 
+    @unittest.skip('Skip show images')
     def test_result(self):
         pool = ThreadPool(processes=cv2.getNumberOfCPUs())
         s_kp, s_desc = splta.affine_detect_into_mesh(self.detector, self.splt_num, self.img1, pool=pool)

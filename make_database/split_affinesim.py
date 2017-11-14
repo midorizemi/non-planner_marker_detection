@@ -50,12 +50,20 @@ def split_kd(keypoints, descrs, splt_num):
     assert isinstance(descrs_list, list)
     for keypoint, descr in zip(keypoints, descrs_list):
         x, y = np.int32(keypoint.pt)
-        if x < 0 or x >= 800 or y < 0 or y >= 600:
+        if x < 0 or x >= 800:
             print(x, y)
-            pass
-        else:
-            splits_k[split_tmp_img[y, x][0]].append(keypoint)
-            splits_d[split_tmp_img[y, x][0]].append(descr)
+            if x < 0:
+                x = 0
+            else:
+                x = 799
+        elif y < 0 or y >= 600:
+            print(x, y)
+            if y < 0:
+                y = 0
+            else:
+                y = 599
+        splits_k[split_tmp_img[y, x][0]].append(keypoint)
+        splits_d[split_tmp_img[y, x][0]].append(descr)
 
     for i, split_d in enumerate(splits_d):
         splits_d[i] = np.array(split_d, dtype=np.float32)
