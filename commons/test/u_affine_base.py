@@ -10,7 +10,7 @@ from commons.common import Timer
 from commons.find_obj import init_feature, filter_matches, explore_match
 # import
 import commons.affine_base as ab
-from commons.find_obj import init_feature
+from commons.custom_find_obj import filter_matches_wcross
 
 class TestClass(TestCase):
     def setUp(self):
@@ -61,11 +61,12 @@ class TestClass(TestCase):
             kp2, desc2 = self.detector.detectAndCompute(self.img2, mask)
             # kp2, desc2 = ab.affine_detect(self.detector, self.img2, simu_param='test') #SIFT
         print('img1 - %d features, img2 - %d features' % (len(kp1), len(kp2)))
-        with Timer('matching'):
-            raw_matches = self.matcher.knnMatch(desc1, trainDescriptors=desc2, k=2) #2
-        p1, p2, kp_pairs = filter_matches(kp1, kp2, raw_matches)
-        self.assertEqual(len(kp_pairs), len(kp2), "kp_pairs and sift_keypoints are not equal")
-        if len(p1) >= 4:
+        with Timer('matching T -> Q'):
+            raw_matches12 = self.matcher.knnMatch(desc2, trainDescriptors=desc1, k=2) #2
+        with Timer('matching Q -> T'):
+            raw_matches21 = self.matcher.knnMatch(desc1, trainDescriptors=desc2, k=2) #2
+        p2, p1, kp_pairs = filter_matches_wcross(kp1, kp2, raw_matches12, raw_matches21)
+        if len(p2) >= 4:
             H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 5.0)
             print('%d / %d  inliers/matched' % (np.sum(status), len(status)))
             # do not draw outliers (there will be a lot of them)
@@ -74,11 +75,15 @@ class TestClass(TestCase):
             H, status = None, None
             print('%d matches found, not enough for homography estimation' % len(p1))
         vis = explore_match('test_affine_detection', self.img1, self.img2, kp_pairs, None, H)
-        cv2.waitKey()
-        cv2.destroyAllWindows()
         print('Ckeck SIFT matching numbers')
-        kp3 = copy(kp2)
-        desc3 = np.copy(desc2)
-        raw_matches_ = self.matcher.knnMatch(desc3, trainDescriptors=desc2, k=2) #2
-        p3, p2_, kp_pairs_ = filter_matches(kp3, kp2, raw_matches_)
+        with Timer('Feature detecting'):
+            h, w = self.img2.shape[:2]
+            mask = np.zeros((h, w), np.uint8)
+            mask[:] = 255
+            kp3, desc3 = self.detector.detectAndCompute(self.img2, mask)
+        with Timer('matching T -> Q'):
+            raw_matches23 = self.matcher.knnMatch(desc3, trainDescriptors=desc2, k=2) #2
+        with Timer('matching Q -> T'):
+            raw_matches32 = self.matcher.knnMatch(desc2, trainDescriptors=desc3, k=2) #2
+        p3, p2_, kp_pairs_ = filter_matches_wcross(kp2, kp3, raw_matches23, raw_matches32)
         self.assertEqual(len(kp_pairs), len(kp_pairs_), "keypoints pairs and sift_keypoints_pairs is not equal")

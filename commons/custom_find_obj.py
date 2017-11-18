@@ -22,6 +22,66 @@ import numpy as np
 
 from commons.common import anorm
 
+def filter_matches_wcross(kp_T, kp_Q, matchesTQ, matchesQT, ratio = 0.75):
+    """
+    filtering matches with cross check
+    :param kp_T: Train keypoints
+    :param kp_Q: Query keypoints
+    :param matchesTQ: Train -> Query dmach list
+    :param matchesQT: Query -> Train
+    :param ratio: ratio check parameter
+    :return: filterd matched points and pairs
+    """
+    def ratiotest(matches):
+        dmatches = []
+        for m in matches:
+            if len(m) == 2 and m[0].distance < m[1].distance * ratio:
+                m = m[0]
+                dmatches.append(m)
+        return dmatches
+
+    def ratiotest_cross(matches):
+        mkp1, mkp2 = [], []
+        for m in matches:
+            if len(m) == 2 and m[0].distance < m[1].distance * ratio:
+                m = m[0]
+                mkp1.append( kp_T[m.trainIdx] )
+                mkp2.append( kp_Q[m.queryIdx] )
+        return mkp1, mkp2
+
+    def crosscheck(dmatchesTQ, dmatchesQT):
+        mkp1, mkp2 = [], []
+        for forward in dmatchesTQ:
+            if len(dmatchesQT) >= forward.trainIdx:
+                print('TQ.length = %d, QT.length = %d' % (len(dmatchesTQ), len(dmatchesQT)))
+                print('TQ.t=%d, TQ.q=%d' % (forward.trainIdx, forward.queryIdx))
+            backward = dmatchesQT[forward.trainIdx]
+            if backward.trainIdx == forward.queryIdx:
+                mkp1.append(kp_T[forward.trainIdx])
+                mkp2.append(kp_Q[forward.queryIdx])
+        return mkp1, mkp2
+
+    def crossCheck(dmatchesTQ, dmatchesQT):
+        crossOK = []
+        for forward in dmatchesTQ:
+            if len(dmatchesQT) <= forward[0].trainIdx:
+                print('TQ.length = %d, QT.length = %d' % (len(dmatchesTQ), len(dmatchesQT)))
+                print('TQ.t=%d, TQ.q=%d' % (forward[0].trainIdx, forward[0].queryIdx))
+            backward = dmatchesQT[forward[0].trainIdx]
+            if backward[0].trainIdx == forward[0].queryIdx:
+                crossOK.append(forward)
+        return crossOK
+
+    # dmatches12 = ratiotest(matchesTQ)
+    # dmatches21 = ratiotest(matchesQT)
+    # mkp1, mkp2 = crosscheck(dmatches12, dmatches21)
+    dmatches_cross = crossCheck(matchesTQ, matchesQT)
+    mkp1, mkp2 = ratiotest_cross(dmatches_cross)
+    p1 = np.float32([kp.pt for kp in mkp1])
+    p2 = np.float32([kp.pt for kp in mkp2])
+    kp_pairs = zip(mkp1, mkp2)
+    return p1, p2, list(kp_pairs)
+
 def explore_match_for_meshes(win, img1, img2, kp_pairs, status = None, Hs = None):
     h1, w1 = img1.shape[:2]
     h2, w2 = img2.shape[:2]
