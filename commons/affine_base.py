@@ -94,6 +94,7 @@ def calc_affine_params(simu: str ='default') -> list:
         print("This simulation is Test type")
         pass
 
+    print("%s -type params: %d" % (str, len(params)))
     return params
 
 

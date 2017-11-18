@@ -78,6 +78,9 @@ def affine_detect_into_mesh(detector, split_num, img, mask=None, pool=None, simu
 
     return splits_k, splits_d
 
+def match(matcher, mmeshList_dsscT, meshList_kpT, descQ, kpQ):
+    pass
+
 if __name__ == '__main__':
     print(__doc__)
 
