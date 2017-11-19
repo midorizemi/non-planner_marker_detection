@@ -92,10 +92,9 @@ class TestSplitAffineSim(unittest.TestCase):
                 for kpT in s_kpT:
                     c += len(kpT)
             return c
-
         print('img1 - %d features, img2 - %d features' % (count_keypoints(), len(kpQ)))
 
-        mesh_pT, mesh_pQ, mesh_pairs = splta2.match(self.matcher, meshList_descT, meshList_kpT, descQ, kpQ)
+        mesh_pT, mesh_pQ, mesh_pairs = splta2.match_with_cross(self.matcher, meshList_descT, meshList_kpT, descQ, kpQ)
         self.assertTrue(True)
         # pool = ThreadPool(processes=cv2.getNumberOfCPUs())
         # s_kp, s_desc = splta.affine_detect_into_mesh(self.detector, self.splt_num, self.img1, pool=pool)

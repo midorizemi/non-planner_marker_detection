@@ -30,10 +30,11 @@ import numpy as np
 
 # local modules
 from commons.common import Timer
-from commons.find_obj import init_feature, filter_matches, explore_match
+from commons.find_obj import init_feature
 from commons.affine_base import affine_detect
 from commons.template_info import TemplateInfo as TmpInf
-from commons.custom_find_obj import explore_match_for_meshes as show
+from commons.custom_find_obj import explore_match_for_meshes, filter_matches_wcross as c_filter
+from commons.custom_find_obj import calclate_Homography
 from make_database import make_splitmap as mks
 
 def split_kd(keypoints, descrs, splt_num):
@@ -51,13 +52,11 @@ def split_kd(keypoints, descrs, splt_num):
     for keypoint, descr in zip(keypoints, descrs_list):
         x, y = np.int32(keypoint.pt)
         if x < 0 or x >= 800:
-            print(x, y)
             if x < 0:
                 x = 0
             else:
                 x = 799
         elif y < 0 or y >= 600:
-            print(x, y)
             if y < 0:
                 y = 0
             else:
@@ -74,6 +73,19 @@ def affine_detect_into_mesh(detector, split_num, img1, mask=None, pool=None):
     kp, desc = affine_detect(detector, img1, mask, pool=pool)
     return split_kd(kp, desc, split_num)
 
+def match_with_cross(matcher, meshList_descT, meshList_kpT, descQ, kpQ):
+    meshList_pT = []
+    meshList_pQ = []
+    meshList_pairs = []
+    for mesh_kpT, mesh_descT in zip(meshList_kpT, meshList_descT):
+        raw_matchesTQ = matcher.knnMatch(descQ, trainDescriptors=mesh_descT, k=2)
+        raw_matchesQT = matcher.knnMatch(mesh_descT, trainDescriptors=descQ, k=2)
+        pT, pQ, pairs = c_filter(mesh_kpT, kpQ, raw_matchesTQ, raw_matchesQT)
+        meshList_pT.append(pT)
+        meshList_pQ.append(pQ)
+        meshList_pairs.append(pairs)
+    return meshList_pT, meshList_pQ, meshList_pairs
+
 if __name__ == '__main__':
     print(__doc__)
 
@@ -84,8 +96,8 @@ if __name__ == '__main__':
     try:
         fn1, fn2 = args
     except:
-        fn1 = 'inputs/templates/qrmarker.png'
-        fn2 = 'inputs/test/qrmarker.png'
+        fn1 = '/home/tiwasaki/PycharmProjects/makeDB/inputs/templates/qrmarker.png'
+        fn2 = '/home/tiwasaki/PycharmProjects/makeDB/inputs/test/mltf_qrmarker/smpl_1.414214_152.735065.png'
 
     img1 = cv2.imread(fn1, 0)
     img2 = cv2.imread(fn2, 0)
@@ -106,54 +118,28 @@ if __name__ == '__main__':
     splt_num = 64
     print('using', feature_name)
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
-    kp1, desc1 = affine_detect(detector, img1, pool=pool)
+    kp1, desc1 = affine_detect(detector, img1, pool=pool, simu_param='default')
     s_kp, s_desc = split_kd(kp1, desc1, splt_num)
-    kp2, desc2 = affine_detect(detector, img2, pool=pool)
+    kp2, desc2 = affine_detect(detector, img2, pool=pool, simu_param='test')
     len_s_kp = 0
     for kps in s_kp:
         len_s_kp += len(kps)
     print('img1 - %d features, img2 - %d features' % (len_s_kp, len(kp2)))
 
-    def calc_H(kp1, kp2, desc1, desc2):
-        with Timer('matching'):
-            raw_matches = matcher.knnMatch(desc2, desc1, 2)#2
-        p1, p2, kp_pairs = filter_matches(kp1, kp2, raw_matches)
-        if len(p1) >= 4:
-            H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 5.0)
-            print('%d / %d  inliers/matched' % (np.sum(status), len(status)))
-            # do not draw outliers (there will be a lot of them)
-            kp_pairs = [kpp for kpp, flag in zip(kp_pairs, status) if flag]
-        else:
-            H, status = None, None
-            print('%d matches found, not enough for homography estimation' % len(p1))
+    with Timer('matching'):
+        mesh_pT, mesh_pQ, mesh_pairs = match_with_cross(matcher, s_desc, s_kp, desc2, kp2)
 
-        return kp_pairs, H, status
+    Hs = []
+    statuses = []
+    kp_pairs_long = []
+    for pT, pQ, pairs in zip(mesh_pT, mesh_pQ, mesh_pairs):
+        pairs, H, status = calclate_Homography(pT, pQ, pairs)
+        Hs.append(H)
+        statuses.append(status)
+        for p in pairs:
+            kp_pairs_long.append(p)
 
-    def match_and_draw(win):
-        list_kp_pairs = []
-        Hs = []
-        statuses = []
-        i =0
-        for kps, desc in zip(s_kp, s_desc):
-            assert type(desc) == type(desc2), "EORROR TYPE"
-            with Timer('matching'):
-                raw_matches = matcher.knnMatch(desc2, trainDescriptors=desc, k=2)#2
-            p2, p1, kp_pairs = filter_matches(kp2, kps, raw_matches)
-            if len(p1) >= 4:
-                H, status = cv2.findHomography(p2, p1, cv2.RANSAC, 5.0)
-                print('%d / %d  inliers/matched' % (np.sum(status), len(status)))
-                # do not draw outliers (there will be a lot of them)
-                list_kp_pairs.extend([kpp for kpp, flag in zip(kp_pairs, status) if flag])
-            else:
-                H, status = None, None
-                print('%d matches found, not enough for homography estimation' % len(p1))
-            Hs.append(H)
-            statuses.extend(status)
-            i+=1
-        vis = show(win, img2, img1, list_kp_pairs, statuses, Hs)
-
-
-    match_and_draw('affine find_obj')
+    viw = explore_match_for_meshes('affine find_obj', img1, img2, kp_pairs_long, Hs=Hs)
     cv2.waitKey()
     cv2.destroyAllWindows()
 
