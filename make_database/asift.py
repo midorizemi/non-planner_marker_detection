@@ -94,7 +94,7 @@ def affine_detect(detector, img, mask=None, pool=None):
 
     keypoints, descrs = [], []
     if pool is None:
-        ires = it.imap(f, params)
+        ires = list(map(f, params))
     else:
         ires = pool.imap(f, params)
 

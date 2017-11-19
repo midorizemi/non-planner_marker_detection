@@ -33,6 +33,7 @@ def filter_matches_wcross(kp_T, kp_Q, matchesTQ, matchesQT, ratio = 0.75):
     :return: filterd matched points and pairs
     """
     def ratiotest(matches):
+        """Dont Use"""
         dmatches = []
         for m in matches:
             if len(m) == 2 and m[0].distance < m[1].distance * ratio:
@@ -50,6 +51,7 @@ def filter_matches_wcross(kp_T, kp_Q, matchesTQ, matchesQT, ratio = 0.75):
         return mkp1, mkp2
 
     def crosscheck(dmatchesTQ, dmatchesQT):
+        """Dont Use"""
         mkp1, mkp2 = [], []
         for forward in dmatchesTQ:
             if len(dmatchesQT) >= forward.trainIdx:

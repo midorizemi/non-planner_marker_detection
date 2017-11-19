@@ -68,6 +68,7 @@ def calc_affine_params(simu: str ='default') -> list:
     """
     params = [(1.0, 0.0)]
     if simu == 'default' or simu is None:
+        simu = 'default'
         for t in 2**(0.5*np.arange(1, 6)):
             for phi in np.arange(0, 180, 72.0 / t):
                 params.append((t, phi))
@@ -86,15 +87,15 @@ def calc_affine_params(simu: str ='default') -> list:
 
     if simu == 'test2':
         print("This simulation is Test2 type")
-        for t in 2**(0.5*np.arange(1, 3)):
-            for phi in np.arange(0, 180, 72.0 / t):
+        for t in np.reciprocal(np.cos(np.radians(np.arange(10, 11, 10)))):
+            for phi in np.arange(0, 21, 20):
                 params.append((t, phi))
 
     if simu == 'test':
         print("This simulation is Test type")
         pass
 
-    print("%s -type params: %d" % (str, len(params)))
+    print("%s -type params: %d" % (simu, len(params)))
     return params
 
 
@@ -112,7 +113,7 @@ def affine_detect(detector, img, mask=None, pool=None, simu_param=None):
 
     def f(p):
         t, phi = p
-        timg, tmask, Ai = affine_skew(t, phi, img)
+        timg, tmask, Ai = affine_skew(t, phi, img, mask)
         keypoints, descrs = detector.detectAndCompute(timg, tmask)
         for kp in keypoints:
             x, y = kp.pt

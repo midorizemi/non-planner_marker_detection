@@ -30,11 +30,12 @@ import cv2
 import numpy as np
 
 # local modules
+import itertools as it
 from commons.common import Timer
 from commons.find_obj import init_feature, filter_matches, explore_match
 from commons.affine_base import affine_detect, affine_skew, calc_affine_params
 from commons.template_info import TemplateInfo as TmpInf
-from commons.custom_find_obj import explore_match_for_meshes as show
+from commons.custom_find_obj import explore_match_for_meshes as show, filter_matches_wcross as c_filter
 from make_database import make_splitmap as mks
 from make_database.split_affinesim import split_kd
 
@@ -52,18 +53,18 @@ def affine_detect_into_mesh(detector, split_num, img, mask=None, pool=None, simu
 
     def f(p):
         t, phi = p
-        timg, tmask, Ai = affine_skew(t, phi, img)
+        timg, tmask, Ai = affine_skew(t, phi, img, mask)
         keypoints, descrs = detector.detectAndCompute(timg, tmask)
         for kp in keypoints:
             x, y = kp.pt
             kp.pt = tuple(np.dot(Ai, (x, y, 1)))
         if descrs is None:
             descrs = []
-        s_kp, sdesc = split_kd(keypoints, descrs)
+        s_kp, sdesc = split_kd(keypoints, descrs, split_num)
         return s_kp, sdesc
 
-    splits_k = [[] for row in range(splt_num)]
-    splits_d = [[] for row in range(splt_num)]
+    splits_k = [[] for row in range(split_num)]
+    splits_d = [[] for row in range(split_num)]
     keypoints, descrs = [], []
     if pool is None:
         ires = list(map(f, params))
@@ -72,14 +73,45 @@ def affine_detect_into_mesh(detector, split_num, img, mask=None, pool=None, simu
 
     for i, (k, d) in enumerate(ires):
         print('affine sampling: %d / %d\r' % (i+1, len(params)), end='')
-        for i, uk, ud in enumerate(k, d):
-            splits_k.append(uk)
-            splits_d.append(ud)
+        for j, uk in enumerate(k):
+            splits_k[j].append(uk)
+            splits_d[j].append(d[j])
 
     return splits_k, splits_d
 
 def match(matcher, mmeshList_dsscT, meshList_kpT, descQ, kpQ):
-    pass
+    """
+   You have to input mmeshList_dsscT is affine_detect_into_mesh
+    :param matcher:
+    :param mmeshList_dsscT: mesh-split descts
+    :param meshList_kpT:
+    :param descQ:
+    :param kpQ:
+    :return:
+    """
+    max_pairs = -1
+    mesh_pT = []
+    mesh_pQ =[]
+    mesh_pairs = []
+    for mesh_kpT, mesh_descT in zip(meshList_kpT, mmeshList_dsscT):
+        """メッシュ毎のキーポイント，特徴量"""
+        a = []
+        b = []
+        c = []
+        for kpT, descT in zip(mesh_kpT, mesh_descT):
+            """パラメータ毎に得られるキーポイント，特徴量"""
+            raw_matchesTQ = matcher.knnMatch(descQ, trainDescriptors=descT, k=2)
+            raw_matchesQT = matcher.knnMatch(descT, trainDescriptors=descQ, k=2)
+            result = c_filter(kpT, kpQ, raw_matchesTQ, raw_matchesQT)
+            if max_pairs <= len(result[2]):
+                max_pairs = len(result[2])
+                a = result[0]
+                b = result[1]
+                c = result[2]
+        mesh_pT.append(a)
+        mesh_pQ.append(b)
+        mesh_pairs.append(c)
+    return mesh_pT, mesh_pQ, mesh_pairs
 
 if __name__ == '__main__':
     print(__doc__)
