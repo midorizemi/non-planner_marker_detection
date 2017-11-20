@@ -1,0 +1,147 @@
+USAGE
+  asift.py [--feature=<sift|surf|orb|brisk>[-flann]] [ <image1> <image2> ]
+
+  --feature  - Feature to use. Can be sift, surf, orb or brisk. Append '-flann'
+               to feature name to use Flann-based matcher instead bruteforce.
+
+  Press left mouse button on a feature point to see its matching point.
+
+using sift
+Detection affine simulation Ver.2 ...
+default -type params: 43
+7559.34 mspling: 43 / 43
+
+This simulation is Test type
+test -type params: 1
+img1 - 171105 features, img2 - 5368 features
+matching ...
+72828.62 ms
+
+17 / 46  inliers/matched
+23 / 46  inliers/matched
+16 / 49  inliers/matched
+0 matches found, not enough for homography estimation
+42 / 63  inliers/matched
+0 matches found, not enough for homography estimation
+71 / 77  inliers/matched
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+97 / 113  inliers/matched
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+17 / 46  inliers/matched
+23 / 46  inliers/matched
+16 / 49  inliers/matched
+0 matches found, not enough for homography estimation
+42 / 63  inliers/matched
+0 matches found, not enough for homography estimation
+71 / 77  inliers/matched
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+97 / 113  inliers/matched
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation

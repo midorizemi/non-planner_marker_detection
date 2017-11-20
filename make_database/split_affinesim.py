@@ -1,15 +1,6 @@
 #!/usr/bin/env python
 
 '''
-Affine invariant feature-based image matching sample.
-
-This sample is similar to find_obj.py, but uses the affine transformation
-space sampling technique, called ASIFT [1]. While the original implementation
-is based on SIFT, you can try to use SURF or ORB detectors instead. Homography RANSAC
-is used to reject outliers. Threading is used for faster affine sampling.
-
-[1] http://www.ipol.im/pub/algo/my_affine_sift/
-
 USAGE
   asift.py [--feature=<sift|surf|orb|brisk>[-flann]] [ <image1> <image2> ]
 
@@ -34,7 +25,7 @@ from commons.find_obj import init_feature
 from commons.affine_base import affine_detect
 from commons.template_info import TemplateInfo as TmpInf
 from commons.custom_find_obj import explore_match_for_meshes, filter_matches_wcross as c_filter
-from commons.custom_find_obj import calclate_Homography
+from commons.custom_find_obj import calclate_Homography, calclate_Homography_hard, draw_matches_for_meshes
 from make_database import make_splitmap as mks
 
 def split_kd(keypoints, descrs, splt_num):
@@ -56,7 +47,7 @@ def split_kd(keypoints, descrs, splt_num):
                 x = 0
             else:
                 x = 799
-        elif y < 0 or y >= 600:
+        if y < 0 or y >= 600:
             if y < 0:
                 y = 0
             else:
@@ -139,7 +130,26 @@ if __name__ == '__main__':
         for p in pairs:
             kp_pairs_long.append(p)
 
+    vis = draw_matches_for_meshes(img1, img2, Hs=Hs)
+    cv2.imshow('view weak meshes', vis)
+    cv2.imwrite('qr1_meshes.png', vis)
+
+
+    HsS = []
+    statusesS = []
+    kp_pairs_longS = []
+    for pT, pQ, pairs in zip(mesh_pT, mesh_pQ, mesh_pairs):
+        pairs, H, status = calclate_Homography_hard(pT, pQ, pairs)
+        HsS.append(H)
+        statusesS.append(status)
+        for p in pairs:
+            kp_pairs_longS.append(p)
+    visS = draw_matches_for_meshes(img1, img2, Hs=HsS)
+    cv2.imshow('view stable meshes', visS)
+    cv2.imwrite('qr1_meshes_stable.png', visS)
+
     viw = explore_match_for_meshes('affine find_obj', img1, img2, kp_pairs_long, Hs=Hs)
+    cv2.imwrite('qr1_mesh_line.png', viw)
     cv2.waitKey()
     cv2.destroyAllWindows()
 

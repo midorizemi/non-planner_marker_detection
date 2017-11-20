@@ -102,7 +102,7 @@ def explore_meshes(imgT, Hs=None):
     return meshes
 
 
-def draw_matches_for_meshes(imgT, imgQ, kp_pairs, status=None, Hs=None, vis=None):
+def draw_matches_for_meshes(imgT, imgQ, Hs=None, vis=None):
     h1, w1 = imgT.shape[:2]
     h2, w2 = imgQ.shape[:2]
     if vis is None:
@@ -112,7 +112,7 @@ def draw_matches_for_meshes(imgT, imgQ, kp_pairs, status=None, Hs=None, vis=None
         vis = cv2.cvtColor(vis, cv2.COLOR_GRAY2BGR)
     meshes = explore_meshes(imgT, Hs)
     for mesh_corners in meshes:
-        cv2.polylines(vis, [mesh_corners], True, (255, 0, 0))
+        cv2.polylines(vis, [mesh_corners], True, (255, 255, 0))
 
     return vis
 
@@ -126,7 +126,7 @@ def explore_match_for_meshes(win, imgT, imgQ, kp_pairs, status=None, Hs=None):
     vis = cv2.cvtColor(vis, cv2.COLOR_GRAY2BGR)
     vis0 = vis.copy()
 
-    vis = draw_matches_for_meshes(imgT, imgQ, kp_pairs, status, Hs, vis)
+    vis = draw_matches_for_meshes(imgT, imgQ,  Hs, vis)
     p1, p2 = [], []  # python 2 / python 3 change of zip unpacking
     for kpp in kp_pairs:
         p1.append(np.int32(kpp[0].pt))
@@ -193,4 +193,16 @@ def calclate_Homography(pT, pQ, pairs):
         print('%d matches found, not enough for homography estimation' % len(pQ))
 
     return pairs, H, status
-    pass
+
+def calclate_Homography_hard(pT, pQ, pairs):
+    """calculation homography but hard boarder"""
+    if len(pQ) >= 16:
+        H, status = cv2.findHomography(pT, pQ, cv2.RANSAC, 5.0)
+        print('%d / %d  inliers/matched' % (np.sum(status), len(status)))
+        # do not draw outliers (there will be a lot of them)
+        pairs = [kpp for kpp, flag in zip(pairs, status) if flag]
+    else:
+        H, status = None, None
+        print('%d matches found, not enough for homography estimation' % len(pQ))
+
+    return pairs, H, status

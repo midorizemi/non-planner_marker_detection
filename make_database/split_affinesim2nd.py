@@ -1,16 +1,6 @@
 #!/usr/bin/env python
 
 '''
-Affine invariant feature-based image matching sample.
-
-This sample uses the affine transformation space sampling technique, called ASIFT [1],
-but uses splited template base.
-While the original implementation
-is based on SIFT, you can try to use SURF or ORB detectors instead. Homography RANSAC
-is used to reject outliers. Threading is used for faster affine sampling.
-
-[1] http://www.ipol.im/pub/algo/my_affine_sift/
-
 USAGE
   asift.py [--feature=<sift|surf|orb|brisk>[-flann]] [ <image1> <image2> ]
 
@@ -33,8 +23,8 @@ import numpy as np
 from commons.common import Timer
 from commons.find_obj import init_feature, filter_matches
 from commons.affine_base import affine_detect, affine_skew, calc_affine_params
-from commons.custom_find_obj import explore_match_for_meshes as show, filter_matches_wcross as c_filter
-from commons.custom_find_obj import calclate_Homography, explore_match_for_meshes
+from commons.custom_find_obj import filter_matches_wcross as c_filter, explore_match_for_meshes
+from commons.custom_find_obj import calclate_Homography, calclate_Homography_hard, draw_matches_for_meshes
 from make_database.split_affinesim import split_kd
 
 def affine_detect_into_mesh(detector, split_num, img, mask=None, pool=None, simu_param=None):
@@ -166,6 +156,20 @@ if __name__ == '__main__':
         for p in pairs:
             kp_pairs_long.append(p)
 
+    vis = draw_matches_for_meshes(img1, img2, kp_pairs_long, Hs=Hs)
+    cv2.imshow('view weak meshes', vis)
+    cv2.imwrite('qr2_meshes.png', vis)
+
     viw = explore_match_for_meshes('affine find_obj', img1, img2, kp_pairs_long, Hs=Hs)
+    cv2.imwrite('qr2_mesh_line.png', viw)
+
+    Hs_ = []
+    for pT, pQ, pairs in zip(mesh_pT, mesh_pQ, mesh_pairs):
+        pairs, H, status = calclate_Homography_hard(pT, pQ, pairs)
+        Hs_.append(H)
+    vis_ = draw_matches_for_meshes(img1, img2, kp_pairs_long, Hs=Hs_)
+    cv2.imshow('view stable meshes', vis_)
+    cv2.imwrite('qr2_meshes_stable.png', vis_)
+
     cv2.waitKey()
     cv2.destroyAllWindows()
