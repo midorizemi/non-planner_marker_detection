@@ -48,6 +48,7 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+*__pycache__*
 *.png
 *.jpg
 *.bmp
