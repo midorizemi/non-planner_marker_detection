@@ -93,9 +93,10 @@ if __name__ == '__main__':
     try:
         fn1, fn2 = args
     except:
-        import os.path
-        fn1 = os.path.abspath('../../data/templates/qrmarker.png')
-        fn2 = os.path.abspath('../../data/inputs/unittest/smpl_1.414214_152.735065.png')
+        import os
+        dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
+        fn1 = os.path.abspath(os.path.join(dir, 'data/templates/qrmarker.png'))
+        fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
 
     imgQ = cv2.imread(fn1, 0)
     imgT = cv2.imread(fn2, 0)

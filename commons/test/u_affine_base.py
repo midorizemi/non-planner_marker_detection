@@ -27,9 +27,11 @@ class TestClass(TestCase):
         try:
             fn1, fn2 = args
         except:
-            fn1 = '/home/tiwasaki/PycharmProjects/makeDB/inputs/templates/qrmarker.png'
-            # fn2 = '/home/tiwasaki/PycharmProjects/makeDB/inputs/test/mltf_qrmarker/smpl_0.000000_0.000000.png'
-            fn2 = '/home/tiwasaki/PycharmProjects/makeDB/inputs/templates/qrmarker.png'
+            import os
+            dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, os.pardir))
+            fn1 = os.path.abspath(os.path.join(dir, 'data/templates/qrmarker.png'))
+            fn2 = os.path.abspath(os.path.join(dir, 'data/templates/qrmarker.png'))
+            #fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
 
         self.img1 = cv2.imread(fn1, 0)
         self.img2 = cv2.imread(fn2, 0)
