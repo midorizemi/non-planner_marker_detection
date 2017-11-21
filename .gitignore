@@ -48,4 +48,7 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+*.png
+*.jpg
+*.bmp
 inputs/
