@@ -60,22 +60,22 @@ def split_kd(keypoints, descrs, splt_num):
 
     return splits_k, splits_d
 
-def affine_detect_into_mesh(detector, split_num, img1, mask=None, pool=None):
-    kp, desc = affine_detect(detector, img1, mask, pool=pool)
+def affine_detect_into_mesh(detector, split_num, img1, mask=None, pool=None, simu_param='default'):
+    kp, desc = affine_detect(detector, img1, mask, pool=pool, simu_param=simu_param)
     return split_kd(kp, desc, split_num)
 
-def match_with_cross(matcher, meshList_descT, meshList_kpT, descQ, kpQ):
-    meshList_pT = []
+def match_with_cross(matcher, meshList_descQ, meshList_kpQ, descT, kpT):
     meshList_pQ = []
+    meshList_pT = []
     meshList_pairs = []
-    for mesh_kpT, mesh_descT in zip(meshList_kpT, meshList_descT):
-        raw_matchesTQ = matcher.knnMatch(descQ, trainDescriptors=mesh_descT, k=2)
-        raw_matchesQT = matcher.knnMatch(mesh_descT, trainDescriptors=descQ, k=2)
-        pT, pQ, pairs = c_filter(mesh_kpT, kpQ, raw_matchesTQ, raw_matchesQT)
+    for mesh_kpQ, mesh_descQ in zip(meshList_kpQ, meshList_descQ):
+        raw_matchesQT = matcher.knnMatch(mesh_descQ, trainDescriptors=descT, k=2)
+        raw_matchesTQ = matcher.knnMatch(descT, trainDescriptors=mesh_descQ, k=2)
+        pQ, pT, pairs = c_filter(mesh_kpQ, kpT, raw_matchesQT, raw_matchesTQ)
         meshList_pT.append(pT)
         meshList_pQ.append(pQ)
         meshList_pairs.append(pairs)
-    return meshList_pT, meshList_pQ, meshList_pairs
+    return meshList_pQ, meshList_pT, meshList_pairs
 
 if __name__ == '__main__':
     print(__doc__)
@@ -87,18 +87,19 @@ if __name__ == '__main__':
     try:
         fn1, fn2 = args
     except:
-        fn1 = '/home/tiwasaki/PycharmProjects/makeDB/inputs/templates/qrmarker.png'
-        fn2 = '/home/tiwasaki/PycharmProjects/makeDB/inputs/test/mltf_qrmarker/smpl_1.414214_152.735065.png'
+        import os.path
+        fn1 = os.path.abspath('../../data/templates/qrmarker.png')
+        fn2 = os.path.abspath('../../data/inputs/unittest/smpl_1.414214_152.735065.png')
 
-    img1 = cv2.imread(fn1, 0)
-    img2 = cv2.imread(fn2, 0)
+    imgQ = cv2.imread(fn1, 0)
+    imgT = cv2.imread(fn2, 0)
     detector, matcher = init_feature(feature_name)
 
-    if img1 is None:
+    if imgQ is None:
         print('Failed to load fn1:', fn1)
         sys.exit(1)
 
-    if img2 is None:
+    if imgT is None:
         print('Failed to load fn2:', fn2)
         sys.exit(1)
 
@@ -109,46 +110,41 @@ if __name__ == '__main__':
     splt_num = 64
     print('using', feature_name)
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
-    kp1, desc1 = affine_detect(detector, img1, pool=pool, simu_param='default')
-    s_kp, s_desc = split_kd(kp1, desc1, splt_num)
-    kp2, desc2 = affine_detect(detector, img2, pool=pool, simu_param='test')
+    splt_kpQ, splt_descQ = affine_detect_into_mesh(detector, splt_num, imgQ, simu_param='default')
+    kpT, descT = affine_detect(detector, imgT, pool=pool, simu_param='test')
     len_s_kp = 0
-    for kps in s_kp:
+    for kps in splt_kpQ:
         len_s_kp += len(kps)
-    print('img1 - %d features, img2 - %d features' % (len_s_kp, len(kp2)))
+    print('img1 - %d features, img2 - %d features' % (len_s_kp, len(kpT)))
 
     with Timer('matching'):
-        mesh_pT, mesh_pQ, mesh_pairs = match_with_cross(matcher, s_desc, s_kp, desc2, kp2)
+        mesh_pQ, mesh_pT, mesh_pairs = match_with_cross(matcher, splt_descQ, splt_kpQ, descT, kpT)
 
     Hs = []
     statuses = []
     kp_pairs_long = []
-    for pT, pQ, pairs in zip(mesh_pT, mesh_pQ, mesh_pairs):
-        pairs, H, status = calclate_Homography(pT, pQ, pairs)
+    Hs_stable = []
+    kp_pairs_long_stable = []
+    for pQ, pT, pairs in zip(mesh_pQ, mesh_pT, mesh_pairs):
+        pairs, H, status = calclate_Homography(pQ, pT, pairs)
         Hs.append(H)
         statuses.append(status)
+        if np.sum(status)/len(status) >= 0.4:
+            Hs_stable.append(H)
+        else:
+            Hs_stable.append(None)
         for p in pairs:
             kp_pairs_long.append(p)
 
-    vis = draw_matches_for_meshes(img1, img2, Hs=Hs)
+    vis = draw_matches_for_meshes(imgQ, imgT, Hs=Hs)
     cv2.imshow('view weak meshes', vis)
     cv2.imwrite('qr1_meshes.png', vis)
 
-
-    HsS = []
-    statusesS = []
-    kp_pairs_longS = []
-    for pT, pQ, pairs in zip(mesh_pT, mesh_pQ, mesh_pairs):
-        pairs, H, status = calclate_Homography_hard(pT, pQ, pairs)
-        HsS.append(H)
-        statusesS.append(status)
-        for p in pairs:
-            kp_pairs_longS.append(p)
-    visS = draw_matches_for_meshes(img1, img2, Hs=HsS)
+    visS = draw_matches_for_meshes(imgQ, imgT, Hs=Hs_stable)
     cv2.imshow('view stable meshes', visS)
     cv2.imwrite('qr1_meshes_stable.png', visS)
 
-    viw = explore_match_for_meshes('affine find_obj', img1, img2, kp_pairs_long, Hs=Hs)
+    viw = explore_match_for_meshes('affine find_obj', imgQ, imgT, kp_pairs_long, Hs=Hs_stable)
     cv2.imwrite('qr1_mesh_line.png', viw)
     cv2.waitKey()
     cv2.destroyAllWindows()
