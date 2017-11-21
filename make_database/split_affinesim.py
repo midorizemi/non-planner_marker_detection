@@ -2,7 +2,7 @@
 
 '''
 USAGE
-  asift.py [--feature=<sift|surf|orb|brisk>[-flann]] [ <image1> <image2> ]
+  split_affinesim.py [--feature=<sift|surf|orb|brisk>[-flann]] [ <image1> <image2> ]
 
   --feature  - Feature to use. Can be sift, surf, orb or brisk. Append '-flann'
                to feature name to use Flann-based matcher instead bruteforce.
@@ -77,6 +77,12 @@ def match_with_cross(matcher, meshList_descQ, meshList_kpQ, descT, kpT):
         meshList_pairs.append(pairs)
     return meshList_pQ, meshList_pT, meshList_pairs
 
+def count_keypoints(splt_kpQ):
+    len_s_kp = 0
+    for kps in splt_kpQ:
+        len_s_kp += len(kps)
+    return len_s_kp
+
 if __name__ == '__main__':
     print(__doc__)
 
@@ -112,10 +118,7 @@ if __name__ == '__main__':
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
     splt_kpQ, splt_descQ = affine_detect_into_mesh(detector, splt_num, imgQ, simu_param='default')
     kpT, descT = affine_detect(detector, imgT, pool=pool, simu_param='test')
-    len_s_kp = 0
-    for kps in splt_kpQ:
-        len_s_kp += len(kps)
-    print('img1 - %d features, img2 - %d features' % (len_s_kp, len(kpT)))
+    print('imgQ - %d features, imgT - %d features' % (count_keypoints(splt_kpQ), len(kpT)))
 
     with Timer('matching'):
         mesh_pQ, mesh_pT, mesh_pairs = match_with_cross(matcher, splt_descQ, splt_kpQ, descT, kpT)
@@ -135,6 +138,8 @@ if __name__ == '__main__':
             Hs_stable.append(None)
         for p in pairs:
             kp_pairs_long.append(p)
+            if np.sum(status)/len(status) >= 0.4:
+                kp_pairs_long_stable.append(p)
 
     vis = draw_matches_for_meshes(imgQ, imgT, Hs=Hs)
     cv2.imshow('view weak meshes', vis)
@@ -144,7 +149,7 @@ if __name__ == '__main__':
     cv2.imshow('view stable meshes', visS)
     cv2.imwrite('qr1_meshes_stable.png', visS)
 
-    viw = explore_match_for_meshes('affine find_obj', imgQ, imgT, kp_pairs_long, Hs=Hs_stable)
+    viw = explore_match_for_meshes('affine find_obj', imgQ, imgT, kp_pairs_long_stable, Hs=Hs_stable)
     cv2.imwrite('qr1_mesh_line.png', viw)
     cv2.waitKey()
     cv2.destroyAllWindows()

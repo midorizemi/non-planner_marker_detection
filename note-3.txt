@@ -1,0 +1,83 @@
+
+USAGE
+  asift.py [--feature=<sift|surf|orb|brisk>[-flann]] [ <image1> <image2> ]
+
+  --feature  - Feature to use. Can be sift, surf, orb or brisk. Append '-flann'
+               to feature name to use Flann-based matcher instead bruteforce.
+
+  Press left mouse button on a feature point to see its matching point.
+
+using sift
+default -type params: 43
+This simulation is Test type
+test -type params: 1
+img1 - 171725 features, img2 - 5367 features
+matching ...
+34303.61 ms
+
+28 / 58 = 0.483 inliers/matched=ratio
+29 / 48 = 0.604 inliers/matched=ratio
+20 / 43 = 0.465 inliers/matched=ratio
+7 / 27 = 0.259 inliers/matched=ratio
+47 / 72 = 0.653 inliers/matched=ratio
+38 / 81 = 0.469 inliers/matched=ratio
+76 / 102 = 0.745 inliers/matched=ratio
+62 / 90 = 0.689 inliers/matched=ratio
+43 / 67 = 0.642 inliers/matched=ratio
+56 / 78 = 0.718 inliers/matched=ratio
+40 / 65 = 0.615 inliers/matched=ratio
+7 / 20 = 0.350 inliers/matched=ratio
+60 / 76 = 0.789 inliers/matched=ratio
+60 / 95 = 0.632 inliers/matched=ratio
+122 / 141 = 0.865 inliers/matched=ratio
+117 / 137 = 0.854 inliers/matched=ratio
+40 / 69 = 0.580 inliers/matched=ratio
+72 / 88 = 0.818 inliers/matched=ratio
+10 / 32 = 0.312 inliers/matched=ratio
+6 / 20 = 0.300 inliers/matched=ratio
+50 / 60 = 0.833 inliers/matched=ratio
+53 / 78 = 0.679 inliers/matched=ratio
+69 / 83 = 0.831 inliers/matched=ratio
+91 / 109 = 0.835 inliers/matched=ratio
+76 / 110 = 0.691 inliers/matched=ratio
+73 / 96 = 0.760 inliers/matched=ratio
+51 / 81 = 0.630 inliers/matched=ratio
+7 / 30 = 0.233 inliers/matched=ratio
+55 / 77 = 0.714 inliers/matched=ratio
+57 / 86 = 0.663 inliers/matched=ratio
+95 / 126 = 0.754 inliers/matched=ratio
+87 / 106 = 0.821 inliers/matched=ratio
+66 / 100 = 0.660 inliers/matched=ratio
+76 / 96 = 0.792 inliers/matched=ratio
+35 / 57 = 0.614 inliers/matched=ratio
+6 / 25 = 0.240 inliers/matched=ratio
+53 / 73 = 0.726 inliers/matched=ratio
+58 / 85 = 0.682 inliers/matched=ratio
+107 / 137 = 0.781 inliers/matched=ratio
+83 / 96 = 0.865 inliers/matched=ratio
+39 / 73 = 0.534 inliers/matched=ratio
+60 / 85 = 0.706 inliers/matched=ratio
+20 / 49 = 0.408 inliers/matched=ratio
+5 / 27 = 0.185 inliers/matched=ratio
+47 / 79 = 0.595 inliers/matched=ratio
+32 / 67 = 0.478 inliers/matched=ratio
+67 / 98 = 0.684 inliers/matched=ratio
+69 / 86 = 0.802 inliers/matched=ratio
+60 / 88 = 0.682 inliers/matched=ratio
+73 / 88 = 0.830 inliers/matched=ratio
+31 / 49 = 0.633 inliers/matched=ratio
+7 / 23 = 0.304 inliers/matched=ratio
+72 / 91 = 0.791 inliers/matched=ratio
+38 / 73 = 0.521 inliers/matched=ratio
+81 / 98 = 0.827 inliers/matched=ratio
+91 / 107 = 0.850 inliers/matched=ratio
+38 / 61 = 0.623 inliers/matched=ratio
+61 / 79 = 0.772 inliers/matched=ratio
+19 / 50 = 0.380 inliers/matched=ratio
+6 / 17 = 0.353 inliers/matched=ratio
+20 / 38 = 0.526 inliers/matched=ratio
+36 / 62 = 0.581 inliers/matched=ratio
+48 / 65 = 0.738 inliers/matched=ratio
+43 / 66 = 0.652 inliers/matched=ratio
+
+Process finished with exit code 0

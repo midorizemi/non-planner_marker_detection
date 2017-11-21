@@ -1,0 +1,86 @@
+
+USAGE
+  split_affinesim2nd.py [--feature=<sift|surf|orb|brisk>[-flann]] [ <image1> <image2> ]
+
+  --feature  - Feature to use. Can be sift, surf, orb or brisk. Append '-flann'
+               to feature name to use Flann-based matcher instead bruteforce.
+
+  Press left mouse button on a feature point to see its matching point.
+
+using sift
+Detection affine simulation Ver.2 ...
+default -type params: 43
+4601.85 ms
+
+This simulation is Test type
+test -type params: 1
+imgQ - 171466 features, imgT - 5367 features
+matching ...
+41435.52 ms
+
+17 / 18 = 0.944 inliers/matched=ratio
+18 / 20 = 0.900 inliers/matched=ratio
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+29 / 33 = 0.879 inliers/matched=ratio
+0 matches found, not enough for homography estimation
+48 / 55 = 0.873 inliers/matched=ratio
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+91 / 91 = 1.000 inliers/matched=ratio
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+0 matches found, not enough for homography estimation
+
+Process finished with exit code 0

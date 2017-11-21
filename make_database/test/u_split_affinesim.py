@@ -32,8 +32,9 @@ class TestSplitAffineSim(unittest.TestCase):
         try:
             fn1, fn2 = args
         except:
-            fn1 = '/home/tiwasaki/PycharmProjects/makeDB/inputs/templates/qrmarker.png'
-            fn2 = '/home/tiwasaki/PycharmProjects/makeDB/inputs/test/mltf_qrmarker/smpl_0.000000_0.000000.png'
+            import os.path
+            fn1 = os.path.abspath('../../../data/templates/qrmarker.png')
+            fn2 = os.path.abspath('../../../data/inputs/unittest/smpl_1.414214_152.735065.png')
 
         self.img1 = cv2.imread(fn1, 0)
         self.img2 = cv2.imread(fn2, 0)
@@ -68,6 +69,7 @@ class TestSplitAffineSim(unittest.TestCase):
                 self.assertTrue(True)
             self.assertNotEqual(sdesc.size, 0, "Descriptor is Empty")
             lensdescr += sdesc.shape[0]
+        print("{0} == {1}".format(lenskp, len(kp)))
         self.assertEqual(lenskp, len(kp), "Some keypoints were droped out.")
         self.assertEqual(lensdescr, len(desc), "Some descriptors were droped out.")
 
@@ -79,7 +81,7 @@ class TestSplitAffineSim(unittest.TestCase):
         len_s_kp = 0
         for kps in s_kp:
             len_s_kp += len(kps)
-        print('img1 - %d features, img2 - %d features' % (len_s_kp, len(kp2)))
+        print('imgQ - %d features, imgT - %d features' % (len_s_kp, len(kp2)))
 
         def calc_H(kp1, kp2, desc1, desc2):
             with Timer('matching'):

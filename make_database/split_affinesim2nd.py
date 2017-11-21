@@ -2,7 +2,7 @@
 
 '''
 USAGE
-  asift.py [--feature=<sift|surf|orb|brisk>[-flann]] [ <image1> <image2> ]
+  split_affinesim2nd.py [--feature=<sift|surf|orb|brisk>[-flann]] [ <image1> <image2> ]
 
   --feature  - Feature to use. Can be sift, surf, orb or brisk. Append '-flann'
                to feature name to use Flann-based matcher instead bruteforce.
@@ -66,40 +66,46 @@ def affine_detect_into_mesh(detector, split_num, img, mask=None, pool=None, simu
 
     return splits_k, splits_d
 
-def match_with_cross(matcher, mmeshList_dsscT, meshList_kpT, descQ, kpQ):
+def match_with_cross(matcher, meshList_descQ, meshList_kpQ, descT, kpT):
     """
    You have to input mmeshList_dsscT is affine_detect_into_mesh
     :param matcher:
-    :param mmeshList_dsscT: mesh-split descts
-    :param meshList_kpT:
-    :param descQ:
-    :param kpQ:
+    :param meshList_descQ: mesh-split descts
+    :param meshList_kpQ:
+    :param descT:
+    :param kpT:
     :return:
     """
     max_pairs = -1
     mesh_pT = []
     mesh_pQ =[]
     mesh_pairs = []
-    for mesh_kpT, mesh_descT in zip(meshList_kpT, mmeshList_dsscT):
+    for mesh_kpQ, mesh_descQ in zip(meshList_kpQ, meshList_descQ):
         """メッシュ毎のキーポイント，特徴量"""
-        a = []
-        b = []
-        c = []
-        for kpT, descT in zip(mesh_kpT, mesh_descT):
+        q = []
+        t = []
+        pr = []
+        for kpQ, descQ in zip(mesh_kpQ, mesh_descQ):
             """パラメータ毎に得られるキーポイント，特徴量"""
-            raw_matchesTQ = matcher.knnMatch(descQ, trainDescriptors=descT, k=2)
-            raw_matchesQT = matcher.knnMatch(descT, trainDescriptors=descQ, k=2)
-            result = c_filter(kpT, kpQ, raw_matchesTQ, raw_matchesQT)
+            raw_matchesTQ = matcher.knnMatch(descT, trainDescriptors=descQ, k=2)
+            raw_matchesQT = matcher.knnMatch(descQ, trainDescriptors=descT, k=2)
+            result = c_filter(kpQ, kpT, raw_matchesQT, raw_matchesTQ)
             if max_pairs <= len(result[2]):
                 max_pairs = len(result[2])
-                a = result[0]
-                b = result[1]
-                c = result[2]
-        mesh_pT.append(a)
-        mesh_pQ.append(b)
-        mesh_pairs.append(c)
-    return mesh_pT, mesh_pQ, mesh_pairs
+                q = result[0]
+                t = result[1]
+                pr = result[2]
+        mesh_pQ.append(q)
+        mesh_pT.append(t)
+        mesh_pairs.append(pr)
+    return mesh_pQ, mesh_pT, mesh_pairs
 
+def count_keypoints(s_kp):
+    length = 0
+    for skp in s_kp:
+        for mesh_kp in skp:
+            length += len(mesh_kp)
+    return length
 if __name__ == '__main__':
     print(__doc__)
 
@@ -110,18 +116,19 @@ if __name__ == '__main__':
     try:
         fn1, fn2 = args
     except:
-        fn1 = '/home/tiwasaki/PycharmProjects/makeDB/inputs/templates/qrmarker.png'
-        fn2 = '/home/tiwasaki/PycharmProjects/makeDB/inputs/test/mltf_qrmarker/smpl_1.414214_152.735065.png'
+        import os.path
+        fn1 = os.path.abspath('../../data/templates/qrmarker.png')
+        fn2 = os.path.abspath('../../data/inputs/unittest/smpl_1.414214_152.735065.png')
 
-    img1 = cv2.imread(fn1, 0)
-    img2 = cv2.imread(fn2, 0)
+    imgQ = cv2.imread(fn1, 0)
+    imgT = cv2.imread(fn2, 0)
     detector, matcher = init_feature(feature_name)
 
-    if img1 is None:
+    if imgQ is None:
         print('Failed to load fn1:', fn1)
         sys.exit(1)
 
-    if img2 is None:
+    if imgT is None:
         print('Failed to load fn2:', fn2)
         sys.exit(1)
 
@@ -133,43 +140,42 @@ if __name__ == '__main__':
     print('using', feature_name)
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
     with Timer('Detection affine simulation Ver.2'):
-        s_kp, s_desc = affine_detect_into_mesh(detector, splt_num, img1, pool=pool, simu_param='default')
-    kp2, desc2 = affine_detect(detector, img2, pool=pool, simu_param='test')
+        s_kpQ, s_descQ = affine_detect_into_mesh(detector, splt_num, imgQ, pool=pool, simu_param='default')
+    kpT, descT = affine_detect(detector, imgT, pool=pool, simu_param='test')
 
-    def count_keypoints():
-        c = 0
-        for s_kpT in s_kp:
-            for kpT in s_kpT:
-                c += len(kpT)
-        return c
-    print('img1 - %d features, img2 - %d features' % (count_keypoints(), len(kp2)))
+    print('imgQ - %d features, imgT - %d features' % (count_keypoints(s_kpQ), len(kpT)))
 
     with Timer('matching'):
-        mesh_pT, mesh_pQ, mesh_pairs = match_with_cross(matcher, s_desc, s_kp, desc2, kp2)
+        mesh_pQ, mesh_pT, mesh_pairs = match_with_cross(matcher, s_descQ, s_kpQ, descT, kpT)
+
     Hs = []
     statuses = []
     kp_pairs_long = []
-    for pT, pQ, pairs in zip(mesh_pT, mesh_pQ, mesh_pairs):
-        pairs, H, status = calclate_Homography(pT, pQ, pairs)
+    Hs_stable = []
+    kp_pairs_long_stable = []
+    for pQ, pT, pairs in zip(mesh_pQ, mesh_pT, mesh_pairs):
+        pairs, H, status = calclate_Homography(pQ, pT, pairs)
         Hs.append(H)
         statuses.append(status)
+        if status is not None and np.sum(status)/len(status) >= 0.4:
+            Hs_stable.append(H)
+        else:
+            Hs_stable.append(None)
         for p in pairs:
             kp_pairs_long.append(p)
+            if np.sum(status)/len(status) >= 0.4:
+                kp_pairs_long_stable.append(p)
 
-    vis = draw_matches_for_meshes(img1, img2, kp_pairs_long, Hs=Hs)
+    vis = draw_matches_for_meshes(imgQ, imgT, Hs=Hs)
     cv2.imshow('view weak meshes', vis)
     cv2.imwrite('qr2_meshes.png', vis)
 
-    viw = explore_match_for_meshes('affine find_obj', img1, img2, kp_pairs_long, Hs=Hs)
+    visS = draw_matches_for_meshes(imgQ, imgT, Hs=Hs_stable)
+    cv2.imshow('view stable meshes', visS)
+    cv2.imwrite('qr2_meshes_stable.png', visS)
+
+    viw = explore_match_for_meshes('affine find_obj', imgQ, imgT, kp_pairs_long_stable, Hs=Hs_stable)
     cv2.imwrite('qr2_mesh_line.png', viw)
-
-    Hs_ = []
-    for pT, pQ, pairs in zip(mesh_pT, mesh_pQ, mesh_pairs):
-        pairs, H, status = calclate_Homography_hard(pT, pQ, pairs)
-        Hs_.append(H)
-    vis_ = draw_matches_for_meshes(img1, img2, kp_pairs_long, Hs=Hs_)
-    cv2.imshow('view stable meshes', vis_)
-    cv2.imwrite('qr2_meshes_stable.png', vis_)
-
     cv2.waitKey()
     cv2.destroyAllWindows()
+

@@ -112,7 +112,7 @@ def draw_matches_for_meshes(imgT, imgQ, Hs=None, vis=None):
         vis = cv2.cvtColor(vis, cv2.COLOR_GRAY2BGR)
     meshes = explore_meshes(imgT, Hs)
     for mesh_corners in meshes:
-        cv2.polylines(vis, [mesh_corners], True, (255, 255, 0))
+        cv2.polylines(vis, [mesh_corners], True, (255, 255, 0), thickness=3, lineType=cv2.LINE_AA)
 
     return vis
 

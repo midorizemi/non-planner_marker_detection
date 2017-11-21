@@ -59,8 +59,8 @@ class TestClass(TestCase):
             mask = np.zeros((h, w), np.uint8)
             mask[:] = 255
             kp2, desc2 = self.detector.detectAndCompute(self.img2, mask)
-            # kp2, desc2 = ab.affine_detect(self.detector, self.img2, simu_param='test') #SIFT
-        print('img1 - %d features, img2 - %d features' % (len(kp1), len(kp2)))
+            # kpT, descT = ab.affine_detect(self.detector, self.imgT, simu_param='test') #SIFT
+        print('imgQ - %d features, imgT - %d features' % (len(kp1), len(kp2)))
         with Timer('matching T -> Q'):
             raw_matches12 = self.matcher.knnMatch(desc2, trainDescriptors=desc1, k=2) #2
         with Timer('matching Q -> T'):

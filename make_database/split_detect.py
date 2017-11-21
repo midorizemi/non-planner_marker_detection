@@ -140,7 +140,7 @@ if __name__ == '__main__':
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
     kp1, desc1 = affine_detect(detector, img1, pool=pool)
     kp2, desc2 = affine_detect(detector, img2, pool=pool)
-    print('img1 - %d features, img2 - %d features' % (len(kp1), len(kp2)))
+    print('imgQ - %d features, imgT - %d features' % (len(kp1), len(kp2)))
 
     def match_and_draw(win):
         with Timer('matching'):

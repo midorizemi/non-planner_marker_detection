@@ -59,7 +59,7 @@ class TestClass(TestCase):
             mask = np.zeros((h, w), np.uint8)
             mask[:] = 255
             kp2, desc2 = ab.affine_detect(detector, self.img2) #ASIFT
-        print('img1 - %d features, img2 - %d features' % (len(kp1), len(kp2)))
+        print('imgQ - %d features, imgT - %d features' % (len(kp1), len(kp2)))
         with Timer('matching'):
             raw_matches12 = matcher.knnMatch(desc2, trainDescriptors=desc1, k=2) #2
             raw_matches21 = matcher.knnMatch(desc1, trainDescriptors=desc2, k=2) #2
@@ -77,7 +77,7 @@ class TestClass(TestCase):
             mask = np.zeros((h, w), np.uint8)
             mask[:] = 255
             kp2, desc2 = ab.affine_detect(detector, self.img2) #ASIFT
-        print('img1 - %d features, img2 - %d features' % (len(kp1), len(kp2)))
+        print('imgQ - %d features, imgT - %d features' % (len(kp1), len(kp2)))
         with Timer('matching'):
             raw_matches12 = matcher.knnMatch(desc2, trainDescriptors=desc1, k=2) #2
             raw_matches21 = matcher.knnMatch(desc1, trainDescriptors=desc2, k=2) #2
@@ -95,7 +95,7 @@ class TestClass(TestCase):
             mask = np.zeros((h, w), np.uint8)
             mask[:] = 255
             kp2, desc2 = ab.affine_detect(detector, self.img2) #ASIFT
-        print('img1 - %d features, img2 - %d features' % (len(kp1), len(kp2)))
+        print('imgQ - %d features, imgT - %d features' % (len(kp1), len(kp2)))
         with Timer('matching'):
             raw_matches12 = matcher.knnMatch(desc2, trainDescriptors=desc1, k=2) #2
             raw_matches21 = matcher.knnMatch(desc1, trainDescriptors=desc2, k=2) #2
@@ -114,7 +114,7 @@ class TestClass(TestCase):
             mask = np.zeros((h, w), np.uint8)
             mask[:] = 255
             kp2, desc2 = detector.detectAndCompute(self.img2, mask)
-        print('img1 - %d features, img2 - %d features' % (len(kp1), len(kp2)))
+        print('imgQ - %d features, imgT - %d features' % (len(kp1), len(kp2)))
         with Timer('matching'):
             raw_matches12 = matcher.knnMatch(desc2, trainDescriptors=desc1, k=2) #2
             raw_matches21 = matcher.knnMatch(desc1, trainDescriptors=desc2, k=2) #2
@@ -136,7 +136,7 @@ class TestClass(TestCase):
             mask = np.zeros((h, w), np.uint8)
             mask[:] = 255
             kp2, desc2 = detector.detectAndCompute(self.img2, mask)
-        print('img1 - %d features, img2 - %d features' % (len(kp1), len(kp2)))
+        print('imgQ - %d features, imgT - %d features' % (len(kp1), len(kp2)))
         with Timer('matching'):
             raw_matches12 = matcher.knnMatch(desc2, trainDescriptors=desc1, k=2) #2
             raw_matches21 = matcher.knnMatch(desc1, trainDescriptors=desc2, k=2) #2
