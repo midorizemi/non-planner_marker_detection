@@ -185,9 +185,10 @@ def explore_match_for_meshes(win, imgT, imgQ, kp_pairs, status=None, Hs=None):
 def calclate_Homography(pT, pQ, pairs):
     if len(pQ) >= 4:
         H, status = cv2.findHomography(pT, pQ, cv2.RANSAC, 5.0)
-        print("{0} / {1} = {2:0.3f} inliers/matched=ratio".format(np.sum(status), len(status), np.sum(status)/len(status)))
+        if status is not None and not len(status) == 0 :
+            print("{0} / {1} = {2:0.3f} inliers/matched=ratio".format(np.sum(status), len(status), np.sum(status)/len(status)))
         # do not draw outliers (there will be a lot of them)
-        pairs = [kpp for kpp, flag in zip(pairs, status) if flag]
+            pairs = [kpp for kpp, flag in zip(pairs, status) if flag]
     else:
         H, status = None, None
         print('%d matches found, not enough for homography estimation' % len(pQ))
