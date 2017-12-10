@@ -35,6 +35,14 @@ def read_images(fnQ, fnT, logger):
         sys.exit(1)
     return imgQ, imgT
 
+def read_image(fn, logger):
+    import sys
+    img = cv2.imread(fn, 0)
+    if img is None:
+        logger.error('Failed to load fn1:{0}'.format(fn))
+        sys.exit(1)
+    return img
+
 def setup(expt_names):
     """実験開始用ファイル読み込み"""
     if not os.path.exists(os.path.join(my_file_system.getd_outpts(expt_names), 'log')):
@@ -54,6 +62,44 @@ def setup(expt_names):
     logger.addHandler(fh)
     return logger
 
+def detect(detector, fn, logger, splt_num=64, simu_type="default"):
+    full_fn = my_file_system.getf_template(fn)
+    img = read_image(full_fn, logger)
+    with Timer('Detection with [ ' + simu_type + ' ]', logger):
+        splt_kp, splt_desc = spltA.affine_detect_into_mesh(detector, splt_num, img, simu_param=simu_type)
+    return img, splt_kp, splt_desc
+
+def detect_(detector, matcher, set_fn, splt_kpQ, splt_descQ, logger, pool=None):
+    fnQ, testcase, fnT = set_fn
+    full_fnT = my_file_system.getf_input(testcase, fnT)
+    imgT = read_image(full_fnT, logger)
+    with Timer('Detection with SFIT', logger):
+        kpT, descT = affine_detect(detector, imgT, pool=pool, simu_param='test')
+    return imgT, kpT, descT
+
+def get_templatef_inputf_outputd(expt_name, testcase, test_sample, template):
+    if not template is None:
+        templates = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'templates'))
+        return os.path.abspath(os.path.join(templates, template))
+    if not test_sample is None:
+        inputs = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, "data", "inputs"))
+        return os.path.abspath(os.path.join(inputs, testcase, test_sample))
+    else:
+        outputs = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, "data", "outputs"))
+        return os.path.abspath(os.path.join(outputs, expt_name, testcase))
+
+def match(matcher, kpQ, descQ, kpT, descT, id):
+    with Timer('matching', logger):
+        mesh_pQ, mesh_pT, mesh_pairs = spltA.match_with_cross(matcher, descQ, kpQ, descT, kpT)
+    return mesh_pQ, mesh_pT, mesh_pairs, id
+
+def estimate_mesh(mesh_pQ, mesh_pT, mesh_pairs):
+    inliner_matches = []
+    for pQ, pT, pairs in zip(mesh_pQ, mesh_pT, mesh_pairs):
+        pairs, H, status = calclate_Homography(pQ, pT, pairs)
+
+
+
 def detect_and_match(detector, matcher, set_fn, splt_num=64, simu_type="default"):
     """
     SplitA実験
@@ -71,14 +117,9 @@ def detect_and_match(detector, matcher, set_fn, splt_num=64, simu_type="default"
     full_fnT = my_file_system.getf_input(testcase, fnT)
     imgQ, imgT = read_images(full_fnQ, full_fnT, logger)
 
-    # cv2.imshow("test", imgQ)
-    # cv2.imshow("test1", imgT)
-    # cv2.waitKey()
-    # cv2.destroyAllWindows()
-
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
     with Timer('Detection with SPLIT-ASIFT', logger):
-        splt_kpQ, splt_descQ = spltA.affine_detect_into_mesh(detector, splt_num, imgQ, simu_param=simu_type, pool=pool)
+        splt_kpQ, splt_descQ = spltA.affine_detect_into_mesh(detector, splt_num, imgQ, simu_param=simu_type)
     with Timer('Detection with SFIT', logger):
         kpT, descT = affine_detect(detector, imgT, pool=pool, simu_param='test')
     logger.info('imgQ - {0} features, imgT - {1} features'.format(spltA.count_keypoints(splt_kpQ), len(kpT)))

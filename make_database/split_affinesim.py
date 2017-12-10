@@ -60,7 +60,8 @@ def split_kd(keypoints, descrs, splt_num):
 
     return splits_k, splits_d
 
-def affine_detect_into_mesh(detector, split_num, img1, mask=None, pool=None, simu_param='default'):
+def affine_detect_into_mesh(detector, split_num, img1, mask=None, simu_param='default'):
+    pool = ThreadPool(processes=cv2.getNumberOfCPUs())
     kp, desc = affine_detect(detector, img1, mask, pool=pool, simu_param=simu_param)
     return split_kd(kp, desc, split_num)
 
@@ -116,8 +117,8 @@ if __name__ == '__main__':
 
     splt_num = 64
     print('using', feature_name)
-    pool = ThreadPool(processes=cv2.getNumberOfCPUs())
     splt_kpQ, splt_descQ = affine_detect_into_mesh(detector, splt_num, imgQ, simu_param='default')
+    pool = ThreadPool(processes=cv2.getNumberOfCPUs())
     kpT, descT = affine_detect(detector, imgT, pool=pool, simu_param='test')
     print('imgQ - %d features, imgT - %d features' % (count_keypoints(splt_kpQ), len(kpT)))
 

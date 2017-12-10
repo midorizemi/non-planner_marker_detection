@@ -67,7 +67,7 @@ def calc_affine_params(simu: str ='default') -> list:
     :return: list of taple
     """
     params = [(1.0, 0.0)]
-    if simu == 'default' or simu is None:
+    if simu == 'default' or simu == 'asift' or simu is None:
         simu = 'default'
         for t in 2**(0.5*np.arange(1, 6)):
             for phi in np.arange(0, 180, 72.0 / t):
@@ -91,7 +91,7 @@ def calc_affine_params(simu: str ='default') -> list:
             for phi in np.arange(0, 21, 20):
                 params.append((t, phi))
 
-    if simu == 'test':
+    if simu == 'test' or simu == 'sift':
         print("This simulation is Test type")
         pass
 
@@ -110,6 +110,9 @@ def affine_detect(detector, img, mask=None, pool=None, simu_param=None):
     ThreadPool object may be passed to speedup the computation.
     '''
     params = calc_affine_params(simu_param)
+    if len(params) == 1:
+        keypoints, descrs = detector.detectAndCompute(img, mask)
+        return keypoints, np.array(descrs)
 
     def f(p):
         t, phi = p

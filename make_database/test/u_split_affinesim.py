@@ -76,8 +76,8 @@ class TestSplitAffineSim(unittest.TestCase):
 
     @unittest.skip('Skip show images')
     def test_result(self):
+        s_kp, s_desc = splta.affine_detect_into_mesh(self.detector, self.splt_num, self.img1)
         pool = ThreadPool(processes=cv2.getNumberOfCPUs())
-        s_kp, s_desc = splta.affine_detect_into_mesh(self.detector, self.splt_num, self.img1, pool=pool)
         kp2, desc2 = affine_detect(self.detector, self.img2, pool=pool)
         len_s_kp = 0
         for kps in s_kp:
