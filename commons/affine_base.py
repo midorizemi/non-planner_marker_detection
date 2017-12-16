@@ -2,15 +2,13 @@
 from __future__ import print_function
 
 # built-in modules
-import itertools as it
 
 import cv2
 import numpy as np
-import math
+from logging import getLogger
 
 # local modules
-from commons.common import Timer
-from commons.find_obj import init_feature, filter_matches, explore_match
+from commons.custom_find_obj import filter_matches_wcross as c_filter
 
 
 def affine_skew(tilt, phi, img, mask=None):
@@ -137,3 +135,9 @@ def affine_detect(detector, img, mask=None, pool=None, simu_param=None):
         descrs.extend(d)
 
     return keypoints, np.array(descrs)
+
+def match_with_cross(matcher, descQ, kpQ, descT, kpT):
+    raw_matchesQT = matcher.knnMatch(descQ, trainDescriptors=descT, k=2)
+    raw_matchesTQ = matcher.knnMatch(descT, trainDescriptors=descQ, k=2)
+    pQ, pT, pairs = c_filter(kpQ, kpT, raw_matchesQT, raw_matchesTQ)
+    return pQ, pT, pairs

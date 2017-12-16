@@ -1,4 +1,5 @@
 import os
+import enum
 from typing import Tuple
 
 
@@ -20,6 +21,17 @@ class FileSystemExpt:
 
     def get_log(self):
         pass
+
+class DirNames(enum.Enum):
+    TEMPLATES = 'templates'
+    INPUTS = 'inputs'
+    OUTPUTS = 'outputs'
+
+def get_dir_path_(dirname='templates'):
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', dirname))
+
+def get_template_file_path_(fn):
+    return os.path.join(get_dir_path_(DirNames.TEMPLATES.value), fn)
 
 def getd_outpts(dir_name: Tuple[str, str, str]) -> str:
     """(expt_name, testcase_name) or list type

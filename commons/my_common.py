@@ -9,15 +9,15 @@ import numpy as np
 import cv2
 
 # built-in modules
-import os
-import itertools as it
 from contextlib import contextmanager
 from commons.common import clock
+from logging import getLogger
 
 image_extensions = ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.tiff', '.pbm', '.pgm', '.ppm']
+logger = getLogger(__name__)
 
 @contextmanager
-def Timer(msg, logger):
+def Timer(msg):
     logger.info(msg+'...')
     start = clock()
     try:

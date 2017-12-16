@@ -23,6 +23,40 @@ import numpy as np
 from commons.template_info import TemplateInfo as TmpInf
 from commons.common import anorm
 
+FLANN_INDEX_KDTREE = 1  # bug: flann enums are missing
+FLANN_INDEX_LSH    = 6
+
+def init_feature(name: object) -> object:
+    chunks = name.lower().split('_')
+    if chunks[0] == 'sift':
+        detector = cv2.xfeatures2d.SIFT_create()
+        norm = cv2.NORM_L2
+    elif chunks[0] == 'surf':
+        detector = cv2.xfeatures2d.SURF_create(800)
+        norm = cv2.NORM_L2
+    elif chunks[0] == 'orb':
+        detector = cv2.ORB_create(400)
+        norm = cv2.NORM_HAMMING
+    elif chunks[0] == 'akaze':
+        detector = cv2.AKAZE_create()
+        norm = cv2.NORM_HAMMING
+    elif chunks[0] == 'brisk':
+        detector = cv2.BRISK_create()
+        norm = cv2.NORM_HAMMING
+    else:
+        return None, None
+    if 'flann' in chunks:
+        if norm == cv2.NORM_L2:
+            flann_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+        else:
+            flann_params= dict(algorithm = FLANN_INDEX_LSH,
+                               table_number = 6, # 12
+                               key_size = 12,     # 20
+                               multi_probe_level = 1) #2
+        matcher = cv2.FlannBasedMatcher(flann_params, {})  # bug : need to pass empty dict (#1329)
+    else:
+        matcher = cv2.BFMatcher(norm)
+    return detector, matcher
 
 def filter_matches_wcross(kp_Q, kp_T, matchesQT, matchesTQ, ratio=0.75):
     """
