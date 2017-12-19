@@ -15,6 +15,10 @@ class Features(enum.Enum):
     ORB_FLANN = enum.auto()
     BRISK_FLANN = enum.auto()
 
+class PrefixShapes(enum.Enum):
+    MLTF = 'mltf_'
+    PL = 'pl_'
+    CRV = 'crv_'
 
 def setup_expt_directory(base_name):
     outputs_dir = myfsys.get_dir_path_(DirNames.OUTPUTS.value)
@@ -24,3 +28,7 @@ def setup_expt_directory(base_name):
         return expt_path
     os.mkdir(expt_path)
     return expt_path
+
+def only(obj_list, only_obj):
+    """実験対象を絞りたい時"""
+    return [obj_list[obj_list.index(only_obj)]]

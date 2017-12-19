@@ -3,6 +3,7 @@ Experimentation for split-ASIFT which is detection and matching
 """
 from __future__ import print_function
 import os
+import glob
 import logging
 import numpy as np
 import cv2
@@ -18,9 +19,10 @@ from commons.find_obj import init_feature
 from commons.custom_find_obj import explore_match_for_meshes
 from commons.custom_find_obj import calclate_Homography, draw_matches_for_meshes
 from make_database import split_affinesim as spltA
+import expt_modules as emod
+import my_file_system as myfsys
 
-logger = logging.getLogger(os.path.basename(__file__))
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 def read_images(fnQ, fnT, logger):
     import sys
@@ -35,7 +37,7 @@ def read_images(fnQ, fnT, logger):
         sys.exit(1)
     return imgQ, imgT
 
-def read_image(fn, logger):
+def read_image(fn):
     import sys
     img = cv2.imread(fn, 0)
     if img is None:
@@ -62,19 +64,19 @@ def setup(expt_names):
     logger.addHandler(fh)
     return logger
 
-def detect(detector, fn, logger, splt_num=64, simu_type="default"):
+def detect(detector, fn, splt_num=64, simu_type="default"):
     full_fn = my_file_system.getf_template(fn)
-    img = read_image(full_fn, logger)
+    img = read_image(full_fn)
     with Timer('Detection with [ ' + simu_type + ' ]', logger):
         splt_kp, splt_desc = spltA.affine_detect_into_mesh(detector, splt_num, img, simu_param=simu_type)
     return img, splt_kp, splt_desc
 
-def detect_(detector, matcher, set_fn, splt_kpQ, splt_descQ, logger, pool=None):
+def detect_sift(detector, set_fn, logger, pool=None):
     fnQ, testcase, fnT = set_fn
     full_fnT = my_file_system.getf_input(testcase, fnT)
-    imgT = read_image(full_fnT, logger)
+    imgT = read_image(full_fnT)
     with Timer('Detection with SFIT', logger):
-        kpT, descT = affine_detect(detector, imgT, pool=pool, simu_param='test')
+        kpT, descT = affine_detect(detector, imgT, pool=pool, simu_param='sift')
     return imgT, kpT, descT
 
 def get_templatef_inputf_outputd(expt_name, testcase, test_sample, template):
@@ -97,8 +99,6 @@ def estimate_mesh(mesh_pQ, mesh_pT, mesh_pairs):
     inliner_matches = []
     for pQ, pT, pairs in zip(mesh_pQ, mesh_pT, mesh_pairs):
         pairs, H, status = calclate_Homography(pQ, pT, pairs)
-
-
 
 def detect_and_match(detector, matcher, set_fn, splt_num=64, simu_type="default"):
     """
@@ -158,18 +158,24 @@ def detect_and_match(detector, matcher, set_fn, splt_num=64, simu_type="default"
 
 
 if __name__ == '__main__':
-    import sys, getopt
-    opts, args = getopt.getopt(sys.argv[1:], '', ['feature='])
-    opts = dict(opts)
-    feature_name = opts.get('--feature', 'sift')
-    try:
-        fnQ, dirT, fnT = args
-    except:
-        fnQ = ('qrmarker.png', 'menko.png', 'nabe.png', 'nabe.png', 'nabe.png')
-        dirT = ('unittest', 'crv_menko', 'pics_nabe', 'real-crv_nabe', 'mltf_nabe')
-        fnT = ('smpl_1.414214_152.735065.png', 'smpl_2.828427_152.735065.png', 'IMG_1118.JPG', 'my_photo-5.jpg', 'smpl_1.414214_152.735065.png')
+    expt_path = emod.setup_expt_directory(os.path.basename(__file__))
+    logging.basicConfig(filename=os.path.join(expt_path, 'log.txt'), level=logging.DEBUG)
+    a = os.listdir(myfsys.get_dir_path_(myfsys.DirNames.TEMPLATES.value))
+    a.pop(a.index('mesh_label.png'))
+    detector, matcher = init_feature(emod.Features.SIFT.name)
+    for template in a:
+        template_name, ext = os.path.splitext(template)
+        fn = myfsys.get_template_file_path_(template)
+        imgQ, kpQ, descQ = detect(detector, fn, splt_num=64, simu_type='default')
+        #実験は平面のみ
+        subj_dir = emod.PrefixShapes.PL.value + template_name
+        testsets = os.listdir(myfsys.get_inputs_dir_path(subj_dir))
+        for testcase in testsets:
 
-    detector, matcher = init_feature(feature_name)
+
+        # fnQ = ('qrmarker.png', 'menko.png', 'nabe.png', 'nabe.png', 'nabe.png')
+        # dirT = ('unittest', 'crv_menko', 'pics_nabe', 'real-crv_nabe', 'mltf_nabe')
+        # fnT = ('smpl_1.414214_152.735065.png', 'smpl_2.828427_152.735065.png', 'IMG_1118.JPG', 'my_photo-5.jpg', 'smpl_1.414214_152.735065.png')
 
     # set_fn = (fnQ[0], dirT[0], fnT[0])
     # vis, visS, viw = detect_and_match(detector, matcher, set_fn)

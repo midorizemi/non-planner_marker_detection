@@ -43,11 +43,11 @@ def getd_outpts(dir_name: Tuple[str, str, str]) -> str:
         return os.path.abspath(os.path.join(outputs, *dir_name))
     return outputs
 
+def get_inputs_dir_path(dir_name: str) -> str:
+    return os.path.join(get_dir_path_(DirNames.INPUTS.value), dir_name)
+
 def getd_inputs(dir_name: str) -> str:
-    inputs = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, "data", "inputs"))
-    if dir_name is not None:
-        return os.path.abspath(os.path.join(inputs, dir_name))
-    return inputs
+    return os.path.join(get_dir_path_(DirNames.INPUTS.value), dir_name)
 
 def getd_templates(dir_name: Tuple[str]) -> str:
     templates = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'templates'))
