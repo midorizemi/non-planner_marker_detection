@@ -12,7 +12,6 @@ from multiprocessing.pool import ThreadPool
 
 
 # local modules
-import my_file_system
 from commons.my_common import Timer
 from commons.affine_base import affine_detect
 from commons.find_obj import init_feature
@@ -47,10 +46,10 @@ def read_image(fn):
 
 def setup(expt_names):
     """実験開始用ファイル読み込み"""
-    if not os.path.exists(os.path.join(my_file_system.getd_outpts(expt_names), 'log')):
-        os.makedirs(os.path.join(my_file_system.getd_outpts(expt_names), 'log'))
+    if not os.path.exists(os.path.join(myfsys.getd_outpts(expt_names), 'log')):
+        os.makedirs(os.path.join(myfsys.getd_outpts(expt_names), 'log'))
     # create file handler which logs even debug messages
-    fh = logging.FileHandler(my_file_system.getf_log(expt_names, expt_names[2] + '.log'))
+    fh = logging.FileHandler(myfsys.getf_log(expt_names, expt_names[2] + '.log'))
     fh.setLevel(logging.DEBUG)
     # create console handler with a higher log level
     ch = logging.StreamHandler()
@@ -65,17 +64,18 @@ def setup(expt_names):
     return logger
 
 def detect(detector, fn, splt_num=64, simu_type="default"):
-    full_fn = my_file_system.getf_template(fn)
+    full_fn = myfsys.get_template_file_path_(fn)
     img = read_image(full_fn)
-    with Timer('Detection with [ ' + simu_type + ' ]', logger):
+    cv2.imshow('hoge', img)
+    with Timer('Detection with [ ' + simu_type + ' ]'):
         splt_kp, splt_desc = spltA.affine_detect_into_mesh(detector, splt_num, img, simu_param=simu_type)
     return img, splt_kp, splt_desc
 
 def detect_sift(detector, set_fn, logger, pool=None):
     fnQ, testcase, fnT = set_fn
-    full_fnT = my_file_system.getf_input(testcase, fnT)
+    full_fnT = myfsys.getf_input(testcase, fnT)
     imgT = read_image(full_fnT)
-    with Timer('Detection with SFIT', logger):
+    with Timer('Detection with SFIT'):
         kpT, descT = affine_detect(detector, imgT, pool=pool, simu_param='sift')
     return imgT, kpT, descT
 
@@ -113,8 +113,8 @@ def detect_and_match(detector, matcher, set_fn, splt_num=64, simu_type="default"
     logger = setup(expt_names)
     logger.info(__doc__)
 
-    full_fnQ = my_file_system.getf_template((fnQ,))
-    full_fnT = my_file_system.getf_input(testcase, fnT)
+    full_fnQ = myfsys.getf_template((fnQ,))
+    full_fnT = myfsys.getf_input(testcase, fnT)
     imgQ, imgT = read_images(full_fnQ, full_fnT, logger)
 
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
@@ -146,13 +146,13 @@ def detect_and_match(detector, matcher, set_fn, splt_num=64, simu_type="default"
                 kp_pairs_long_stable.append(p)
 
     vis = draw_matches_for_meshes(imgQ, imgT, Hs=Hs)
-    cv2.imwrite(my_file_system.getf_output(expt_names, 'meshes.png'), vis)
+    cv2.imwrite(myfsys.getf_output(expt_names, 'meshes.png'), vis)
 
     visS = draw_matches_for_meshes(imgQ, imgT, Hs=Hs_stable)
-    cv2.imwrite(my_file_system.getf_output(expt_names, 'meshes_stable.png'), visS)
+    cv2.imwrite(myfsys.getf_output(expt_names, 'meshes_stable.png'), visS)
 
     viw = explore_match_for_meshes('affine find_obj', imgQ, imgT, kp_pairs_long_stable, Hs=Hs_stable)
-    cv2.imwrite(my_file_system.getf_output(expt_names, 'meshes_and_keypoints_stable.png'), viw)
+    cv2.imwrite(myfsys.getf_output(expt_names, 'meshes_and_keypoints_stable.png'), viw)
 
     return vis, visS, viw
 
@@ -164,13 +164,15 @@ if __name__ == '__main__':
     a.pop(a.index('mesh_label.png'))
     detector, matcher = init_feature(emod.Features.SIFT.name)
     for template in a:
-        template_name, ext = os.path.splitext(template)
+        template_name, ext = template.split('.')
+        print(template_name)
         fn = myfsys.get_template_file_path_(template)
-        imgQ, kpQ, descQ = detect(detector, fn, splt_num=64, simu_type='default')
+        imgQ, kpQ, descQ = detect(detector, fn, splt_num=64, simu_type='asift')
         #実験は平面のみ
         subj_dir = emod.PrefixShapes.PL.value + template_name
         testsets = os.listdir(myfsys.get_inputs_dir_path(subj_dir))
         for testcase in testsets:
+            print(myfsys.getf_input(subj_dir, testcase))
 
 
         # fnQ = ('qrmarker.png', 'menko.png', 'nabe.png', 'nabe.png', 'nabe.png')
@@ -185,8 +187,8 @@ if __name__ == '__main__':
     # vis, visS, viw = detect_and_match(detector, matcher, set_fn)
     # set_fn = (fnQ[3], dirT[3], fnT[3])
     # vis, visS, viw = detect_and_match(detector, matcher, set_fn)
-    set_fn = (fnQ[4], dirT[4], fnT[4])
-    vis, visS, viw = detect_and_match(detector, matcher, set_fn)
+    #set_fn = (fnQ[4], dirT[4], fnT[4])
+    #vis, visS, viw = detect_and_match(detector, matcher, set_fn)
     # cv2.imshow('view weak meshes', vis)
     # cv2.imshow('view stable meshes', visS)
     # cv2.imwrite('qr1_mesh_line.png', viw)

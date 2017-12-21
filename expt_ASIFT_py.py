@@ -53,11 +53,11 @@ def read_image(fn):
         sys.exit(1)
     return img
 
-def detect(detector, fn, simu_type="default"):
+def asift_detect(detector, fn):
     img = read_image(fn)
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
-    with Timer('Detection with [ ' + simu_type + ' ]'):
-        splt_kp, splt_desc = affine_detect(detector, img, pool=pool, simu_param=simu_type)
+    with Timer('Detection with [ ASIFT ]'):
+        splt_kp, splt_desc = affine_detect(detector, img, pool=pool, simu_param='asift')
     return img, splt_kp, splt_desc
 
 def asfit():
@@ -73,8 +73,8 @@ if __name__ == '__main__':
     for testcase in a:
         logger.info(testcase + 'の場合')
         fn = myfsys.get_template_file_path_(testcase)
-        imgQ, kpQ, descQ = detect(detector, fn, 'default')
-        imgT, kpT, descT = detect(detector, fn, 'default')
+        imgQ, kpQ, descQ = asift_detect(detector, fn)
+        imgT, kpT, descT = asift_detect(detector, fn)
         logger.info('imgQ - %d features, imgT - %d features' % (len(kpQ), len(kpT)))
         with Timer('matching'):
             pQ, pT, pairs = match_with_cross(matcher, descQ, kpQ, descT, kpT)
