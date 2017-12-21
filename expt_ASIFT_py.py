@@ -22,22 +22,22 @@ from commons.my_common import Timer
 from commons.find_obj import filter_matches, explore_match
 from commons.custom_find_obj import init_feature
 from commons.affine_base import affine_detect, match_with_cross
-import my_file_system as myfsys
-from my_file_system import DirNames
+import my_file_path_manager as myfsys
+from my_file_path_manager import DirNames
 from expt_modules import Features
 
 logger = logging.getLogger(__name__)
 
 def get_file_path_template_input(testcase, test_sample, template):
     if not template is None:
-        templates = myfsys.get_dir_path_(DirNames.TEMPLATES.value)
+        templates = myfsys.get_dir_full_path_(DirNames.TEMPLATES.value)
         return os.path.abspath(os.path.join(templates, template))
     if not test_sample is None:
-        inputs = myfsys.get_dir_path_(DirNames.INPUTS.value)
+        inputs = myfsys.get_dir_full_path_(DirNames.INPUTS.value)
         return os.path.abspath(os.path.join(inputs, testcase, test_sample))
 
 def setup_expt_directory():
-    outputs_dir = myfsys.get_dir_path_(DirNames.OUTPUTS.value)
+    outputs_dir = myfsys.get_dir_full_path_(DirNames.OUTPUTS.value)
     expt_name, ext = os.path.splitext(os.path.basename(__file__))
     expt_path = os.path.join(outputs_dir, expt_name)
     if os.path.exists(expt_path):
@@ -67,12 +67,12 @@ if __name__ == '__main__':
     expt_path = setup_expt_directory()
     logging.basicConfig(filename=os.path.join(expt_path, 'log.txt'), level=logging.DEBUG)
     logger.info(__doc__)
-    a = os.listdir(myfsys.get_dir_path_(DirNames.TEMPLATES.value))
+    a = os.listdir(myfsys.get_dir_full_path_(DirNames.TEMPLATES.value))
     a.pop(a.index('mesh_label.png'))
     detector, matcher = init_feature(Features.SIFT.name)
     for testcase in a:
         logger.info(testcase + 'の場合')
-        fn = myfsys.get_template_file_path_(testcase)
+        fn = myfsys.get_template_file_full_path_(testcase)
         imgQ, kpQ, descQ = asift_detect(detector, fn)
         imgT, kpT, descT = asift_detect(detector, fn)
         logger.info('imgQ - %d features, imgT - %d features' % (len(kpQ), len(kpT)))

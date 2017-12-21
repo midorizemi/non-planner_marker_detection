@@ -2,7 +2,7 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$" />
-    <orderEntry type="jdk" jdkName="Python 3.6.3 (~/.pyenv/versions/anaconda3-5.0.0/bin/python)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="ocvcontrib331Py36Linux" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="TestRunnerService">

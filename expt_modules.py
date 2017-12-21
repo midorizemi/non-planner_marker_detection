@@ -1,7 +1,11 @@
 import enum
-import os
-import my_file_system as myfsys
-from my_file_system import DirNames
+import cv2
+import logging
+import numpy as np
+import my_file_path_manager as myfsys
+from my_file_path_manager import DirNames
+
+logger = logging.getLogger(__name__)
 
 class Features(enum.Enum):
     SIFT = enum.auto()
@@ -19,16 +23,27 @@ class PrefixShapes(enum.Enum):
     MLTF = 'mltf_'
     PL = 'pl_'
     CRV = 'crv_'
-
-def setup_expt_directory(base_name):
-    outputs_dir = myfsys.get_dir_path_(DirNames.OUTPUTS.value)
-    expt_name, ext = os.path.splitext(base_name)
-    expt_path = os.path.join(outputs_dir, expt_name)
-    if os.path.exists(expt_path):
-        return expt_path
-    os.mkdir(expt_path)
-    return expt_path
+    ALL = 'all_'
 
 def only(obj_list, only_obj):
     """実験対象を絞りたい時"""
     return [obj_list[obj_list.index(only_obj)]]
+
+def read_image(fn):
+    import sys
+    img = cv2.imread(fn, 0)
+    if img is None:
+        logger.error('Failed to load fn1:{0}'.format(fn))
+        sys.exit(1)
+    return img
+
+def detect(detector, fn, mask=None):
+    logger.debug('expt_modules.detect')
+    img = read_image(fn)
+    h, w = img.shape[:2]
+    if mask is None:
+        mask = np.zeros((h, w), np.uint8)
+        mask[:] = 255
+    keypoints, descrs = detector.detectAndCompute(img, mask)
+    return img, keypoints, descrs
+

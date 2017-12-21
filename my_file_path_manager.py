@@ -27,11 +27,11 @@ class DirNames(enum.Enum):
     INPUTS = 'inputs'
     OUTPUTS = 'outputs'
 
-def get_dir_path_(dirname='templates'):
+def get_dir_full_path_(dirname='templates'):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', dirname))
 
-def get_template_file_path_(fn):
-    return os.path.join(get_dir_path_(DirNames.TEMPLATES.value), fn)
+def get_template_file_full_path_(fn):
+    return os.path.join(get_dir_full_path_(DirNames.TEMPLATES.value), fn)
 
 def getd_outpts(dir_name: Tuple[str, str, str]) -> str:
     """(expt_name, testcase_name) or list type
@@ -43,11 +43,11 @@ def getd_outpts(dir_name: Tuple[str, str, str]) -> str:
         return os.path.abspath(os.path.join(outputs, *dir_name))
     return outputs
 
-def get_inputs_dir_path(dir_name: str) -> str:
-    return os.path.join(get_dir_path_(DirNames.INPUTS.value), dir_name)
+def get_inputs_dir_full_path(*dir_name) -> str:
+    return os.path.join(get_dir_full_path_(DirNames.INPUTS.value), *dir_name)
 
 def getd_inputs(dir_name: str) -> str:
-    return os.path.join(get_dir_path_(DirNames.INPUTS.value), dir_name)
+    return os.path.join(get_dir_full_path_(DirNames.INPUTS.value), dir_name)
 
 def getd_templates(dir_name: Tuple[str]) -> str:
     templates = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'templates'))
@@ -79,6 +79,39 @@ def getf_output(expt_testcase: Tuple[str, str, str], test_sample: str) -> str:
     """
     testcase_dir = getd_outpts(expt_testcase)
     return os.path.abspath(os.path.join(testcase_dir, test_sample))
+
+def setup_expt_directory(base_name):
+    outputs_dir = get_dir_full_path_(DirNames.OUTPUTS.value)
+    expt_name, ext = os.path.splitext(base_name)
+    expt_path = os.path.join(outputs_dir, expt_name)
+    if os.path.exists(expt_path):
+        return expt_path
+    os.mkdir(expt_path)
+    return expt_path
+
+def setup_output_directory(base_name, *dirs):
+    outputs_dir = get_dir_full_path_(DirNames.OUTPUTS.value)
+    expt_name, ext = os.path.splitext(base_name)
+    path = os.path.join(outputs_dir, *dirs)
+    if os.path.exists(path):
+        return path
+    os.makedirs(path, exist_ok=True)
+    return path
+
+def get_dir_full_path_testset(*option_dirs, prefix_shape, template_fn):
+    name, ext = os.path.splitext(template_fn)
+    testset_name = prefix_shape + name
+    return get_inputs_dir_full_path(*option_dirs, testset_name)
+
+def make_list_testcase_file_name(*option_dirs, prefix_shape, template_fn):
+    testset_full_path = get_dir_full_path_testset(*option_dirs, prefix_shape=prefix_shape, template_fn=template_fn)
+    b = os.listdir(testset_full_path).sort()
+    return b
+
+def make_list_template_filename():
+    a = os.listdir(get_dir_full_path_(DirNames.TEMPLATES.value))
+    newlist = [template_fn for template_fn in a if not template_fn.startswith('mesh')]
+    return newlist
 
 if __name__ == '__main__':
     print(getd_outpts(("aaa", "bbb", "aaa")))

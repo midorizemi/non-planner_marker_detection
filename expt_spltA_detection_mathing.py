@@ -19,7 +19,7 @@ from commons.custom_find_obj import explore_match_for_meshes
 from commons.custom_find_obj import calclate_Homography, draw_matches_for_meshes
 from make_database import split_affinesim as spltA
 import expt_modules as emod
-import my_file_system as myfsys
+import my_file_path_manager as myfsys
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ def setup(expt_names):
     return logger
 
 def detect(detector, fn, splt_num=64, simu_type="default"):
-    full_fn = myfsys.get_template_file_path_(fn)
+    full_fn = myfsys.get_template_file_full_path_(fn)
     img = read_image(full_fn)
     cv2.imshow('hoge', img)
     with Timer('Detection with [ ' + simu_type + ' ]'):
@@ -158,19 +158,19 @@ def detect_and_match(detector, matcher, set_fn, splt_num=64, simu_type="default"
 
 
 if __name__ == '__main__':
-    expt_path = emod.setup_expt_directory(os.path.basename(__file__))
+    expt_path = myfsys.setup_expt_directory(os.path.basename(__file__))
     logging.basicConfig(filename=os.path.join(expt_path, 'log.txt'), level=logging.DEBUG)
-    a = os.listdir(myfsys.get_dir_path_(myfsys.DirNames.TEMPLATES.value))
+    a = os.listdir(myfsys.get_dir_full_path_(myfsys.DirNames.TEMPLATES.value))
     a.pop(a.index('mesh_label.png'))
     detector, matcher = init_feature(emod.Features.SIFT.name)
     for template in a:
         template_name, ext = template.split('.')
         print(template_name)
-        fn = myfsys.get_template_file_path_(template)
+        fn = myfsys.get_template_file_full_path_(template)
         imgQ, kpQ, descQ = detect(detector, fn, splt_num=64, simu_type='asift')
         #実験は平面のみ
         subj_dir = emod.PrefixShapes.PL.value + template_name
-        testsets = os.listdir(myfsys.get_inputs_dir_path(subj_dir))
+        testsets = os.listdir(myfsys.get_inputs_dir_full_path(subj_dir))
         for testcase in testsets:
             print(myfsys.getf_input(subj_dir, testcase))
 
