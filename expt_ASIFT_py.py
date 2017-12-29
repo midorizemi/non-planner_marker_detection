@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 '''
+TestScript: {}
 ASIFT　のテスト
 テンプレート画像同士でチェックする
 '''
@@ -66,7 +67,7 @@ def asfit():
 if __name__ == '__main__':
     expt_path = setup_expt_directory()
     logging.basicConfig(filename=os.path.join(expt_path, 'log.txt'), level=logging.DEBUG)
-    logger.info(__doc__)
+    logger.info(__doc__.format(os.path.basename(__file__)))
     a = os.listdir(myfsys.get_dir_full_path_(DirNames.TEMPLATES.value))
     a.pop(a.index('mesh_label.png'))
     detector, matcher = init_feature(Features.SIFT.name)

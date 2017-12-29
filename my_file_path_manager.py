@@ -1,6 +1,9 @@
 import os
 import enum
 from typing import Tuple
+import inspect
+import logging
+logger = logging.getLogger(__name__)
 
 
 class FileSystemExpt:
@@ -81,6 +84,7 @@ def getf_output(expt_testcase: Tuple[str, str, str], test_sample: str) -> str:
     return os.path.abspath(os.path.join(testcase_dir, test_sample))
 
 def setup_expt_directory(base_name):
+    logger.info('Now in {}'.format(inspect.currentframe().f_code.co_name))
     outputs_dir = get_dir_full_path_(DirNames.OUTPUTS.value)
     expt_name, ext = os.path.splitext(base_name)
     expt_path = os.path.join(outputs_dir, expt_name)
@@ -90,12 +94,14 @@ def setup_expt_directory(base_name):
     return expt_path
 
 def setup_output_directory(base_name, *dirs):
+    logger.info('Now in {}'.format(inspect.currentframe().f_code.co_name))
     outputs_dir = get_dir_full_path_(DirNames.OUTPUTS.value)
     expt_name, ext = os.path.splitext(base_name)
-    path = os.path.join(outputs_dir, *dirs)
+    path = os.path.join(outputs_dir, expt_name, *dirs)
     if os.path.exists(path):
         return path
     os.makedirs(path, exist_ok=True)
+    logger.info('make dir in ' + path)
     return path
 
 def get_dir_full_path_testset(*option_dirs, prefix_shape, template_fn):

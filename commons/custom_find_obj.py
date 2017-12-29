@@ -19,9 +19,13 @@ from __future__ import print_function
 
 import cv2
 import numpy as np
+import logging
+import inspect
 
 from commons.template_info import TemplateInfo as TmpInf
 from commons.common import anorm
+
+logger = logging.getLogger(__name__)
 
 FLANN_INDEX_KDTREE = 1  # bug: flann enums are missing
 FLANN_INDEX_LSH    = 6
@@ -69,15 +73,7 @@ def filter_matches_wcross(kp_Q, kp_T, matchesQT, matchesTQ, ratio=0.75):
     :return: filterd matched points and pairs
     """
 
-    def ratiotest(matches):
-        """Dont Use"""
-        dmatches = []
-        for m in matches:
-            if len(m) == 2 and m[0].distance < m[1].distance * ratio:
-                m = m[0]
-                dmatches.append(m)
-        return dmatches
-
+    logger.info('Now in {}'.format(inspect.currentframe().f_code.co_name))
     def ratiotest_cross(matches):
         mkpT, mkpQ = [], []
         for m in matches:
@@ -87,33 +83,17 @@ def filter_matches_wcross(kp_Q, kp_T, matchesQT, matchesTQ, ratio=0.75):
                 mkpQ.append(kp_Q[m.queryIdx])
         return mkpT, mkpQ
 
-    def crosscheck(dmatchesTQ, dmatchesQT):
-        """Dont Use"""
-        mkp1, mkp2 = [], []
-        for forward in dmatchesTQ:
-            if len(dmatchesQT) >= forward.trainIdx:
-                print('TQ.length = %d, QT.length = %d' % (len(dmatchesTQ), len(dmatchesQT)))
-                print('TQ.t=%d, TQ.q=%d' % (forward.trainIdx, forward.queryIdx))
-            backward = dmatchesQT[forward.trainIdx]
-            if backward.trainIdx == forward.queryIdx:
-                mkp1.append(kp_T[forward.trainIdx])
-                mkp2.append(kp_Q[forward.queryIdx])
-        return mkp1, mkp2
-
     def crossCheck(dmatchesQT, dmatchesTQ):
         crossOK = []
         for forward in dmatchesQT:
             if len(dmatchesTQ) <= forward[0].trainIdx:
-                print('QT.length = %d, TQ.length = %d' % (len(dmatchesQT), len(dmatchesTQ)))
-                print('QT.t=%d, TQ.q=%d' % (forward[0].trainIdx, forward[0].queryIdx))
+                logger.info('QT.length = %d, TQ.length = %d' % (len(dmatchesQT), len(dmatchesTQ)))
+                logger.info('QT.t=%d, TQ.q=%d' % (forward[0].trainIdx, forward[0].queryIdx))
             backward = dmatchesTQ[forward[0].trainIdx]
             if backward[0].trainIdx == forward[0].queryIdx:
                 crossOK.append(forward)
         return crossOK
 
-    # dmatches12 = ratiotest(matchesTQ)
-    # dmatches21 = ratiotest(matchesQT)
-    # mkp1, mkp2 = crosscheck(dmatches12, dmatches21)
     dmatches_cross = crossCheck(matchesQT, matchesTQ)
     match_kpT, match_kpQ = ratiotest_cross(dmatches_cross)
     pT = np.float32([kp.pt for kp in match_kpT])
@@ -217,27 +197,29 @@ def explore_match_for_meshes(win, imgT, imgQ, kp_pairs, status=None, Hs=None):
 
 
 def calclate_Homography(pT, pQ, pairs):
+    logger.info('Now in {}'.format(inspect.currentframe().f_code.co_name))
     if len(pQ) >= 4:
         H, status = cv2.findHomography(pT, pQ, cv2.RANSAC, 5.0)
         if status is not None and not len(status) == 0 :
-            print("{0} / {1} = {2:0.3f} inliers/matched=ratio".format(np.sum(status), len(status), np.sum(status)/len(status)))
+            logger.info("{0} / {1} = {2:0.3f} inliers/matched=ratio".format(np.sum(status), len(status), np.sum(status)/len(status)))
         # do not draw outliers (there will be a lot of them)
             pairs = [kpp for kpp, flag in zip(pairs, status) if flag]
     else:
         H, status = None, None
-        print('%d matches found, not enough for homography estimation' % len(pQ))
+        logger.info('%d matches found, not enough for homography estimation' % len(pQ))
 
     return pairs, H, status
 
 def calclate_Homography_hard(pT, pQ, pairs):
     """calculation homography but hard boarder"""
+    logger.info('Now in {}'.format(inspect.currentframe().f_code.co_name))
     if len(pQ) >= 16:
         H, status = cv2.findHomography(pT, pQ, cv2.RANSAC, 5.0)
-        print('%d / %d  inliers/matched' % (np.sum(status), len(status)))
+        logger.info('%d / %d  inliers/matched' % (np.sum(status), len(status)))
         # do not draw outliers (there will be a lot of them)
         pairs = [kpp for kpp, flag in zip(pairs, status) if flag]
     else:
         H, status = None, None
-        print('%d matches found, not enough for homography estimation' % len(pQ))
+        logger.info('%d matches found, not enough for homography estimation' % len(pQ))
 
     return pairs, H, status

@@ -5,11 +5,12 @@ from __future__ import print_function
 
 import cv2
 import numpy as np
-from logging import getLogger
+import logging
 
 # local modules
 from commons.custom_find_obj import filter_matches_wcross as c_filter
 
+logger = logging.getLogger(__name__)
 
 def affine_skew(tilt, phi, img, mask=None):
     '''
@@ -66,7 +67,6 @@ def calc_affine_params(simu: str ='default') -> list:
     """
     params = [(1.0, 0.0)]
     if simu == 'default' or simu == 'asift' or simu is None:
-        simu = 'default'
         for t in 2**(0.5*np.arange(1, 6)):
             for phi in np.arange(0, 180, 72.0 / t):
                 params.append((t, phi))
@@ -84,16 +84,16 @@ def calc_affine_params(simu: str ='default') -> list:
                 params.append((t, phi))
 
     if simu == 'test2':
-        print("This simulation is Test2 type")
+        logger.debug("This simulation is Test2 type")
         for t in np.reciprocal(np.cos(np.radians(np.arange(10, 11, 10)))):
             for phi in np.arange(0, 21, 20):
                 params.append((t, phi))
 
     if simu == 'test' or simu == 'sift':
-        print("This simulation is Test type")
+        logger.debug("This simulation is Test type")
         pass
 
-    print("%s -type params: %d" % (simu, len(params)))
+    logger.info("params: %d" % (len(params)))
     return params
 
 
@@ -130,7 +130,7 @@ def affine_detect(detector, img, mask=None, pool=None, simu_param=None):
         ires = pool.imap(f, params)
 
     for i, (k, d) in enumerate(ires):
-        print('affine sampling: %d / %d\r' % (i+1, len(params)), end='')
+        print('affine sampling: {0:d} / {1:d}\r'.format(i+1, len(params)), end='')
         keypoints.extend(k)
         descrs.extend(d)
 
@@ -141,3 +141,4 @@ def match_with_cross(matcher, descQ, kpQ, descT, kpT):
     raw_matchesTQ = matcher.knnMatch(descT, trainDescriptors=descQ, k=2)
     pQ, pT, pairs = c_filter(kpQ, kpT, raw_matchesQT, raw_matchesTQ)
     return pQ, pT, pairs
+

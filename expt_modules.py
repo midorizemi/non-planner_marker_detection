@@ -1,6 +1,7 @@
 import enum
 import cv2
 import logging
+import inspect
 import numpy as np
 import my_file_path_manager as myfsys
 from my_file_path_manager import DirNames
@@ -27,6 +28,7 @@ class PrefixShapes(enum.Enum):
 
 def only(obj_list, only_obj):
     """実験対象を絞りたい時"""
+    logger.info('Now in {}'.format(inspect.currentframe().f_code.co_name))
     return [obj_list[obj_list.index(only_obj)]]
 
 def read_image(fn):
@@ -38,7 +40,7 @@ def read_image(fn):
     return img
 
 def detect(detector, fn, mask=None):
-    logger.debug('expt_modules.detect')
+    logger.info('Now in {}'.format(inspect.currentframe().f_code.co_name))
     img = read_image(fn)
     h, w = img.shape[:2]
     if mask is None:
