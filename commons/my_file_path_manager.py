@@ -31,7 +31,7 @@ class DirNames(enum.Enum):
     OUTPUTS = 'outputs'
 
 def get_dir_full_path_(dirname='templates'):
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', dirname))
+    return os.path.abspath(os.path.join(os.path.dirname(__file__),  os.pardir, os.pardir, 'data', dirname))
 
 def get_template_file_full_path_(fn):
     return os.path.join(get_dir_full_path_(DirNames.TEMPLATES.value), fn)
@@ -41,7 +41,7 @@ def getd_outpts(dir_name: Tuple[str, str, str]) -> str:
     :param dir_name: tuple[str]
     :return: str
     """
-    outputs = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'outputs'))
+    outputs = os.path.abspath(os.path.join(os.path.dirname(__file__),  os.pardir, os.pardir, 'data', 'outputs'))
     if dir_name is not None:
         return os.path.abspath(os.path.join(outputs, *dir_name))
     return outputs
@@ -53,7 +53,7 @@ def getd_inputs(dir_name: str) -> str:
     return os.path.join(get_dir_full_path_(DirNames.INPUTS.value), dir_name)
 
 def getd_templates(dir_name: Tuple[str]) -> str:
-    templates = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'templates'))
+    templates = os.path.abspath(os.path.join(os.path.dirname(__file__),  os.pardir, os.pardir, 'data', 'templates'))
     if dir_name is not None:
         return os.path.abspath(os.path.join(templates, *dir_name))
     return templates
