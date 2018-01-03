@@ -1,10 +1,9 @@
 import enum
-import cv2
-import logging
 import inspect
+import logging
+
+import cv2
 import numpy as np
-import my_file_path_manager as myfsys
-from my_file_path_manager import DirNames
 
 logger = logging.getLogger(__name__)
 

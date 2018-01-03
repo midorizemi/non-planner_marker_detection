@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 '''
-SPLIT_ASIFRT　のテスト{}
-メッシュ領域毎のメッシュ検出性能を測定
+{} > ARマーカを検出します
 '''
 
 # Python 2/3 compatibility
@@ -137,32 +136,46 @@ if __name__ == '__main__':
     logging.getLogger('make_database.split_affinesim').setLevel(level=logging.DEBUG)
     logging.getLogger('make_database.split_affinesim').addHandler(timeRotationHandler)
     logging.getLogger('make_database.split_affinesim').addHandler(consoleHandler)
-    logging.getLogger('expt_modules').setLevel(level=logging.DEBUG)
-    logging.getLogger('expt_modules').addHandler(timeRotationHandler)
-    logging.getLogger('expt_modules').addHandler(consoleHandler)
-    logging.getLogger('my_file_path_manager').setLevel(level=logging.DEBUG)
-    logging.getLogger('my_file_path_manager').addHandler(timeRotationHandler)
-    logging.getLogger('my_file_path_manager').addHandler(consoleHandler)
+    logging.getLogger('commons.expt_modules').setLevel(level=logging.DEBUG)
+    logging.getLogger('commons.expt_modules').addHandler(timeRotationHandler)
+    logging.getLogger('commons.expt_modules').addHandler(consoleHandler)
+    logging.getLogger('commons.my_file_path_manager').setLevel(level=logging.DEBUG)
+    logging.getLogger('commons.my_file_path_manager').addHandler(timeRotationHandler)
+    logging.getLogger('commons.my_file_path_manager').addHandler(consoleHandler)
 
     logger.info(__doc__.format(os.path.basename(__file__)))
-    a = myfsys.make_list_template_filename()
-    # a = emod.only(a, 'glass.png')
+
+    import sys, getopt
+    opts, args = getopt.getopt(sys.argv[1:], '', ['feature='])
+    opts = dict(opts)
+    feature_name = opts.get('--feature', 'brisk-flann')
+    feature_name = opts.get('--feature', 'brisk-flann')
+    try:
+        fn1, fn2 = args
+    except:
+        fn1 = myfsys.getd_templates()
+        fn2 = '../data/aero3.jpg'
+
+    img1 = cv2.imread(fn1, 0)
+    img2 = cv2.imread(fn2, 0)
     detector, matcher = init_feature(emod.Features.SIFT.name)
-    column_num = 8
-    row_num = 8
-    split_num = column_num * row_num
-    expt_name = os.path.basename(expt_path)
-    for template_fn in a:
-        logger.info('Template:{}'.format(template_fn))
-        # global s_kpQ, s_descQ, testset_full_path
-        template_full_fn = myfsys.get_template_file_full_path_(template_fn)
-        imgQ, s_kpQ, s_descQ = split_asift_detect(detector, template_full_fn, split_num=split_num)
-        keyargs = {'prefix_shape': emod.PrefixShapes.PL.value, 'template_fn': template_fn}
-        testset_full_path = myfsys.get_dir_full_path_testset('cgs', **keyargs)
-        testset_name = os.path.basename(testset_full_path)
-        logger.debug('testset_name is {}'.format(testset_name))
-        logger.info('Test Set:{}'.format(testset_name))
-        output_dir = myfsys.setup_output_directory(expt_name, testset_name, 'npfiles')
-        dictionary = exam(testset_full_path,  s_kpQ, s_descQ )
-        np.savez_compressed(os.path.join(expt_path, testset_name), **dictionary)
+
+    if img1 is None:
+        print('Failed to load fn1:', fn1)
+        sys.exit(1)
+
+    if img2 is None:
+        print('Failed to load fn2:', fn2)
+        sys.exit(1)
+
+    if detector is None:
+        print('unknown feature:', feature_name)
+        sys.exit(1)
+
+    logger.debug('using', feature_name)
+
+    pool = ThreadPool(processes=cv2.getNumberOfCPUs())
+    kp1, desc1 = split_asift_detect(detector, img1, pool=pool)
+    kp2, desc2 = affine_detect(detector, img2, pool=pool)
+    print('imgQ - %d features, imgT - %d features' % (len(kp1), len(kp2)))
 

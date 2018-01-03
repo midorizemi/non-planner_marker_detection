@@ -9,23 +9,21 @@ ASIFT　のテスト
 # Python 2/3 compatibility
 from __future__ import print_function
 
+import logging
+import os
 # built-in modules
 from multiprocessing.pool import ThreadPool
 
 import cv2
 import numpy as np
-import os
-import logging
 
-
+from commons import my_file_path_manager as myfsys
+from commons.affine_base import affine_detect, match_with_cross
+from commons.custom_find_obj import init_feature
+from commons.expt_modules import Features
 # local modules
 from commons.my_common import Timer
-from commons.find_obj import filter_matches, explore_match
-from commons.custom_find_obj import init_feature
-from commons.affine_base import affine_detect, match_with_cross
-import my_file_path_manager as myfsys
-from my_file_path_manager import DirNames
-from expt_modules import Features
+from commons.my_file_path_manager import DirNames
 
 logger = logging.getLogger(__name__)
 

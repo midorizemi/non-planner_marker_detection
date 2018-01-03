@@ -2,24 +2,23 @@
 Experimentation for split-ASIFT which is detection and matching
 """
 from __future__ import print_function
-import os
-import glob
+
 import logging
-import numpy as np
-import cv2
+import os
 # built-in modules
 from multiprocessing.pool import ThreadPool
 
+import cv2
+import numpy as np
 
+from commons import expt_modules as emod, my_file_path_manager as myfsys
+from commons.affine_base import affine_detect
+from commons.custom_find_obj import calclate_Homography, draw_matches_for_meshes
+from commons.custom_find_obj import explore_match_for_meshes
+from commons.find_obj import init_feature
 # local modules
 from commons.my_common import Timer
-from commons.affine_base import affine_detect
-from commons.find_obj import init_feature
-from commons.custom_find_obj import explore_match_for_meshes
-from commons.custom_find_obj import calclate_Homography, draw_matches_for_meshes
 from make_database import split_affinesim as spltA
-import expt_modules as emod
-import my_file_path_manager as myfsys
 
 logger = logging.getLogger(__name__)
 
