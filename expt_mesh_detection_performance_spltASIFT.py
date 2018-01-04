@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
     logger.info(__doc__.format(os.path.basename(__file__)))
     a = myfsys.make_list_template_filename()
-    # a = emod.only(a, 'glass.png')
+    a = emod.only(a, 'glass.png')
     detector, matcher = init_feature(emod.Features.SIFT.name)
     column_num = 8
     row_num = 8
@@ -156,13 +156,18 @@ if __name__ == '__main__':
         logger.info('Template:{}'.format(template_fn))
         # global s_kpQ, s_descQ, testset_full_path
         template_full_fn = myfsys.get_template_file_full_path_(template_fn)
-        imgQ, s_kpQ, s_descQ = split_asift_detect(detector, template_full_fn, split_num=split_num)
+        # imgQ, s_kpQ, s_descQ = split_asift_detect(detector, template_full_fn, split_num=split_num)
         keyargs = {'prefix_shape': emod.PrefixShapes.PL.value, 'template_fn': template_fn}
         testset_full_path = myfsys.get_dir_full_path_testset('cgs', **keyargs)
         testset_name = os.path.basename(testset_full_path)
         logger.debug('testset_name is {}'.format(testset_name))
         logger.info('Test Set:{}'.format(testset_name))
         output_dir = myfsys.setup_output_directory(expt_name, testset_name, 'npfiles')
-        dictionary = exam(testset_full_path,  s_kpQ, s_descQ )
-        np.savez_compressed(os.path.join(expt_path, testset_name), **dictionary)
+        testcase_fns = os.listdir(testset_full_path)
+        testcase_fns.sort()
+        print(testcase_fns)
+        # dictionary = exam(testset_full_path,  s_kpQ, s_descQ)
+        # np.savez_compressed(os.path.join(expt_path, testset_name), **dictionary)
+        # result_collection = np.load(os.path.join(expt_path, testset_name+'.npz'))
+
 

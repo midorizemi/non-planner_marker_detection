@@ -18,6 +18,7 @@ import numpy as np
 from commons import expt_modules as emod, my_file_path_manager as myfsys
 from commons.custom_find_obj import calclate_Homography
 from commons.custom_find_obj import init_feature
+from commons.custom_find_obj import draw_matches_for_meshes
 from commons.my_common import Timer
 from make_database import split_affinesim as saf
 
@@ -97,6 +98,21 @@ def exam(testset_full_path,  s_kpQ, s_descQ ):
     return dict(zip(keywords, results))
 
 
+def calculate_hompgraphy(mesh_pQ, mesh_pT, mesh_pairs):
+    list_H = []
+    statuses = []
+    kp_pairs = []
+    pairs_on_meshes = np.empty(0)
+    for pQ, pT, pairs in zip(mesh_pQ, mesh_pT, mesh_pairs):
+        inlier_pairs, H, status = calclate_Homography(pQ, pT, pairs)
+        list_H.append(H)
+        statuses.append(status)
+        kp_pairs.append(inlier_pairs)
+        if status is None:
+            status = []
+        pairs_on_meshes = np.append(pairs_on_meshes, np.array([len(inlier_pairs), len(status), len(pairs)]))
+    return list_H, statuses, kp_pairs, pairs_on_meshes.reshape((row_num, column_num, 3))
+
 if __name__ == '__main__':
     expt_path = myfsys.setup_expt_directory(os.path.basename(__file__))
     # logging.basicConfig(filename=os.path.join(expt_path, 'log.txt'), level=logging.DEBUG)
@@ -113,7 +129,7 @@ if __name__ == '__main__':
         backupCount=3,
         encoding='utf8'
     )
-    timeRotationHandler.setLevel(level=logging.INFO)
+    timeRotationHandler.setLevel(level=logging.DEBUG)
     timeRotationHandler.setFormatter(formatter)
     logging.getLogger(__name__).addHandler(timeRotationHandler)
     logging.getLogger(__name__).addHandler(consoleHandler)
@@ -121,25 +137,19 @@ if __name__ == '__main__':
     # logging.getLogger('commons').setLevel(level=logging.DEBUG)
     # logging.getLogger('commons').addHandler(timeRotationHandler)
     # logging.getLogger('commons').addHandler(consoleHandler)
-    logging.getLogger('commons.affine_base').setLevel(level=logging.WARNING)
     logging.getLogger('commons.affine_base').addHandler(timeRotationHandler)
     logging.getLogger('commons.affine_base').addHandler(consoleHandler)
-    logging.getLogger('commons.custom_find_obj').setLevel(level=logging.WARNING)
     logging.getLogger('commons.custom_find_obj').addHandler(timeRotationHandler)
     logging.getLogger('commons.custom_find_obj').addHandler(consoleHandler)
-    logging.getLogger('commons.my_common').setLevel(level=logging.WARNING)
     logging.getLogger('commons.my_common').addHandler(timeRotationHandler)
     logging.getLogger('commons.my_common').addHandler(consoleHandler)
     # logging.getLogger('make_database').setLevel(level=logging.DEBUG)
     # logging.getLogger('make_database').addHandler(timeRotationHandler)
     # logging.getLogger('make_database').addHandler(consoleHandler)
-    logging.getLogger('make_database.split_affinesim').setLevel(level=logging.DEBUG)
     logging.getLogger('make_database.split_affinesim').addHandler(timeRotationHandler)
     logging.getLogger('make_database.split_affinesim').addHandler(consoleHandler)
-    logging.getLogger('commons.expt_modules').setLevel(level=logging.DEBUG)
     logging.getLogger('commons.expt_modules').addHandler(timeRotationHandler)
     logging.getLogger('commons.expt_modules').addHandler(consoleHandler)
-    logging.getLogger('commons.my_file_path_manager').setLevel(level=logging.DEBUG)
     logging.getLogger('commons.my_file_path_manager').addHandler(timeRotationHandler)
     logging.getLogger('commons.my_file_path_manager').addHandler(consoleHandler)
 
@@ -148,34 +158,52 @@ if __name__ == '__main__':
     import sys, getopt
     opts, args = getopt.getopt(sys.argv[1:], '', ['feature='])
     opts = dict(opts)
-    feature_name = opts.get('--feature', 'brisk-flann')
-    feature_name = opts.get('--feature', 'brisk-flann')
+    feature_name = opts.get('--feature', 'sift')
     try:
-        fn1, fn2 = args
+        fn1, fn2, column_num, row_num = args
     except:
-        fn1 = myfsys.getd_templates()
-        fn2 = '../data/aero3.jpg'
+        dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
+        fn1 = myfsys.get_template_file_full_path_('qrmarker.png')
+        fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/cgs/pl_qrmarker/288_010-350.png'))
+        column_num = 8
+        row_num = 8
 
-    img1 = cv2.imread(fn1, 0)
-    img2 = cv2.imread(fn2, 0)
-    detector, matcher = init_feature(emod.Features.SIFT.name)
-
-    if img1 is None:
-        print('Failed to load fn1:', fn1)
-        sys.exit(1)
-
-    if img2 is None:
-        print('Failed to load fn2:', fn2)
-        sys.exit(1)
+    detector, matcher = init_feature(feature_name)
 
     if detector is None:
-        print('unknown feature:', feature_name)
+        logger.info('unknown feature:{}'.format(feature_name))
         sys.exit(1)
 
-    logger.debug('using', feature_name)
+    split_num = column_num * row_num
+    img_q, splt_kp_q, splt_desc_q = split_asift_detect(detector, fn1, split_num)
 
-    pool = ThreadPool(processes=cv2.getNumberOfCPUs())
-    kp1, desc1 = split_asift_detect(detector, img1, pool=pool)
-    kp2, desc2 = affine_detect(detector, img2, pool=pool)
-    print('imgQ - %d features, imgT - %d features' % (len(kp1), len(kp2)))
+    logger.debug('using {}'.format(feature_name))
+
+    img_t, kp_t, desc_t = emod.detect(detector, fn2)
+    print('imgQ - %d features, imgT - %d features' % (saf.count_keypoints(splt_kp_q), len(kp_t)))
+
+    with Timer('matching'):
+        mesh_pQ, mesh_pT, mesh_pairs = saf.match_with_cross(matcher, splt_desc_q, splt_kp_q, desc_t, kp_t)
+
+    list_H, statuses, kp_pairs, pairs_on_meshes = calculate_hompgraphy(mesh_pQ, mesh_pT, mesh_pairs)
+
+    mt_p = pairs_on_meshes[:, :, 0]
+    mt_s = pairs_on_meshes[:, :, 1]
+    mt_m = pairs_on_meshes[:, :, 2]
+    ratio_ps = mt_p / mt_s
+    ratio_pm = mt_p / mt_m
+    logger.info(mt_p)
+    logger.info(mt_s)
+    logger.info(mt_m)
+    logger.info(ratio_ps)
+    logger.info(ratio_pm)
+
+    vis = draw_matches_for_meshes(img_q, img_t, Hs=list_H)
+
+    test_set_name = os.path.dirname(fn2)
+    test_case_name, ext = os.path.splitext(os.path.basename(fn2))
+
+    cv2.imwrite(os.path.join(expt_path, test_set_name, test_case_name + '_hconcat_ditection.png'), vis)
+    np.savetxt(os.path.join(expt_path, test_set_name, test_case_name + '_pairs_on_meshes.csv'), pairs_on_meshes, delimiter=',')
+
 

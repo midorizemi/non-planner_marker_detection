@@ -128,7 +128,7 @@ class TestSplitAffineSim(unittest.TestCase):
         #
         # def match_and_draw(win):
         #     list_kp_pairs = []
-        #     Hs = []
+        #     list_H = []
         #     statuses = []
         #     i =0
         #     for kps, desc in zip(s_kpQ, s_descQ):
@@ -144,10 +144,10 @@ class TestSplitAffineSim(unittest.TestCase):
         #         else:
         #             H, status = None, None
         #             print('%d matches found, not enough for homography estimation' % len(p1))
-        #         Hs.append(H)
+        #         list_H.append(H)
         #         statuses.extend(status)
         #         i+=1
-        #     vis = show(win, self.imgT, self.imgQ, list_kp_pairs, statuses, Hs)
+        #     vis = show(win, self.imgT, self.imgQ, list_kp_pairs, statuses, list_H)
         #
         #
         # match_and_draw('affine find_obj')
