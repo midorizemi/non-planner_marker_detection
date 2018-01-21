@@ -61,15 +61,23 @@ def split_kd(keypoints, descrs, splt_num):
 
     return splits_k, splits_d
 
-def merge_rule(split_k: list, split_d: list, temp_inf: TmpInf):
+def merge_rule(splt_k: list, splt_d: list, temp_inf: TmpInf):
     """
     何かしらのマージルール
     特徴点数とか，分布とか，特徴量とかでマージが必要なメッシュかをかをはんていする
     """
-    mesh_k_num = np.array([len(keypoints) for keypoints in split_k]).reshape(temp_inf.get_mesh_shape())
-    dtype = [('mesh_id', int), ('x', int), ('y', int)]
-    mesh_k_np = np.array([[id, np.int32(kp.pt[0]), np.int32(kp.pt[1])] for i, keypoints in enumerate(split_k) for kp in keypoints], dtype=dtype)
+    mesh_k_num = np.array([len(keypoints) for keypoints in splt_k]).reshape(temp_inf.get_mesh_shape())
+    #for i, kps in enumerate(splt_k):
+    #    for kp in kps:
+    #        x, y = np.int32(kp.pt)
+    #        i = np.int32(i)
+    #        mkn.append([i, x, y])
 
+
+
+            #分析2：特徴点座標のバラつき
+
+def analysis_num(mesh_k_num):
     #分析１：特徴点数のバラつき
     mean = mesh_k_num.mean()
     median = np.median(mesh_k_num)
@@ -78,8 +86,46 @@ def merge_rule(split_k: list, split_d: list, temp_inf: TmpInf):
     peak2peak = np.ptp(mesh_k_num)
     standard_deviation = np.std(mesh_k_num)
     variance = np.var(mesh_k_num)
+    return mean, median, max, min, peak2peak, standard_deviation, variance
 
-    #分析2：特徴点座標のバラつき
+def analysis_kp(splt_k, temp_inf: TmpInf):
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    dtype = [('mesh_id', int), ('x', int), ('y', int)]
+    mesh_k_np = [[np.int32(i), np.int32(kp.pt[0]), np.int32(kp.pt[1])] for i, keypoints in enumerate(splt_k)
+        for kp in keypoints]
+    df = pd.DataFrame(mesh_k_np, columns=['mesh_id', 'x', 'y'])
+    print("Done make data")
+    print(df.head(5))
+
+    #grid = sns.FacetGrid(df, col='mesh_id', hue='mesh_id', col_wrap=8, size=2)
+    #print("makeing kde map")
+    #grid = grid.map(sns.kdeplot(df['x'], df['y'], x="x", y="y"))
+    #return grid
+
+    # with sns.hls_palette(64):
+    #     #ax = sns.kdeplot('x', 'y', df[df['mesh_id'] == i].x, df[df['mesh_id'] == i].y)
+    #     ax = sns.kdeplot(data = df)
+    #     ax.set(ylim=(600, 0))
+    #     ax.set(xlim=(0, 800))
+    #     ax.set(xlabel="x")
+    #     ax.set(ylabel="y")
+    with Timer('plotting Kernel De'):
+        for i in range(temp_inf.get_splitnum()):
+            sns.set_palette(sns.hls_palette(64), i+1)
+            ax = sns.kdeplot(df.query('mesh_id == ' + str(i))['x'], df.query('mesh_id == ' + str(i))['y'], shade=True)
+            ax.set(ylim=(600, 0))
+            ax.set(xlim=(0, 800))
+            ax.set(xlabel="x")
+            ax.set(ylabel="y")
+            ax.set(title="Kernel density estimation")
+
+    # ax = sns.kdeplot(df['x'], df['y'], shade=True)
+    return ax.savefig('test.png')
+
+
+
 
 
 def combine_mesh(split_k, split_d, temp_inf):
