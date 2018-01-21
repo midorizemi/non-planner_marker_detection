@@ -68,7 +68,7 @@ def merge_rule(split_k: list, split_d: list, temp_inf: TmpInf):
     """
     mesh_k_num = np.array([len(keypoints) for keypoints in split_k]).reshape(temp_inf.get_mesh_shape())
     dtype = [('mesh_id', int), ('x', int), ('y', int)]
-    mesh_k_np = np.array([id, np.int32(kp.pt[0]), np.int32(kp.pt[1])]for kp in keypoints for id, keypoints in enumerate(split_k), dtype=dtype)
+    mesh_k_np = np.array([[id, np.int32(kp.pt[0]), np.int32(kp.pt[1])] for i, keypoints in enumerate(split_k) for kp in keypoints], dtype=dtype)
 
     #分析１：特徴点数のバラつき
     mean = mesh_k_num.mean()
