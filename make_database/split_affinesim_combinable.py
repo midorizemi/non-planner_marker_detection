@@ -61,11 +61,66 @@ def split_kd(keypoints, descrs, splt_num):
 
     return splits_k, splits_d
 
-def combine_mesh(split_k, split_d, scols, srows):
-    mesh_ids = np.arange(scols * srows)
-    np.reshape(mesh_ids, (srows, scols))
+def merge_rule(split_k: list, split_d: list, temp_inf: TmpInf):
+    """
+    何かしらのマージルール
+    特徴点数とか，分布とか，特徴量とかでマージが必要なメッシュかをかをはんていする
+    """
+    mesh_k_num = np.array([len(keypoints) for keypoints in split_k]).reshape(temp_inf.get_mesh_shape())
+    dtype = [('mesh_id', int), ('x', int), ('y', int)]
+    mesh_k_np = np.array([id, np.int32(kp.pt[0]), np.int32(kp.pt[1])]for kp in keypoints for id, keypoints in enumerate(split_k), dtype=dtype)
 
-    def check_amounts(k):
+    #分析１：特徴点数のバラつき
+    mean = mesh_k_num.mean()
+    median = np.median(mesh_k_num)
+    max = np.amax(mesh_k_num)
+    min = np.amax(mesh_k_num)
+    peak2peak = np.ptp(mesh_k_num)
+    standard_deviation = np.std(mesh_k_num)
+    variance = np.var(mesh_k_num)
+
+    #分析2：特徴点座標のバラつき
+
+
+def combine_mesh(split_k, split_d, temp_inf):
+    """
+    :type temp_inf: TmpInf
+    :param split_k:
+    :param split_d:
+    :param temp_inf:
+    :return:
+    """
+    mesh_map = temp_inf.get_mesh_map()
+    mesh_k_num = np.array(len(keypoints) for keypoints in split_k).reshape(temp_inf.get_mesh_shape())
+
+    for i, kd in enumerate(zip(split_k, split_d)):
+        """
+        矩形メッシュをマージする．4近傍のマージ．順番は左，上，右，下．
+        最大値のところとマージする
+        :return:
+        """
+        if merge_rule() is True:
+            meshid_list = temp_inf.get_meshidlist_nneighbor(i)
+            self_id = mesh_map[temp_inf.get_meshid_vertex(i)]
+            if not self_id == i or len(np.where(mesh_map == i)[0]) > 1:
+                """すでにマージされている"""
+                continue
+            #最大値のindexを求める．
+            dtype = [('muki', int), ('keypoint_num', int), ('merge_id', int)]
+            tmp = np.array([(len(meshid_list)-index, mesh_k_num[id], id) for index, id in enumerate(meshid_list)],
+                           dtype=dtype)
+            tmp.sort(order=['keypoint_num', 'muki'])
+            #idにself_idをマージする
+            merge_id = tmp[-1][2]
+            mesh_map[temp_inf.get_meshid_vertex(i)] = merge_id
+            split_k[merge_id].extend(split_k[i])
+            np.concatenate((split_d[merge_id], split_d[i]))
+            #マージされて要らなくなったメッシュは消す
+            split_k[i] = []
+            split_d[i] = np.array([[]])
+
+
+
 
 def affine_detect_into_mesh(detector, split_num, img1, mask=None, simu_param='default'):
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
@@ -90,6 +145,30 @@ def count_keypoints(splt_kpQ):
     for kps in splt_kpQ:
         len_s_kp += len(kps)
     return len_s_kp
+def test_module():
+    import os
+    import sys
+    dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
+    fn1 = os.path.abspath(os.path.join(dir, 'data/templates/qrmarker.png'))
+    fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
+    imgQ = cv2.imread(fn1, 0)
+    imgT = cv2.imread(fn2, 0)
+    detector, matcher = init_feature('sift')
+    if imgQ is None:
+        print('Failed to load fn1:', fn1)
+        sys.exit(1)
+
+    if imgT is None:
+        print('Failed to load fn2:', fn2)
+        sys.exit(1)
+
+    if detector is None:
+        print('unknown feature:', feature_name)
+        sys.exit(1)
+
+    template_information = {"_fn":"tmp.png", "_cols":800, "_rows":600, "_scols":8, "_srows":8, "_nneighbor":4}
+    temp_inf = TmpInf(**template_information)
+    return temp_inf, imgQ, imgT, detector, matcher, dir
 
 if __name__ == '__main__':
     print(__doc__)
