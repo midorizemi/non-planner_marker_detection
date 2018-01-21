@@ -91,6 +91,7 @@ def analysis_num(mesh_k_num):
 def analysis_kp(splt_k, temp_inf: TmpInf):
     import pandas as pd
     import matplotlib.pyplot as plt
+    from matplotlib.colors import ListedColormap
     import seaborn as sns
     dtype = [('mesh_id', int), ('x', int), ('y', int)]
     mesh_k_np = [[np.int32(i), np.int32(kp.pt[0]), np.int32(kp.pt[1])] for i, keypoints in enumerate(splt_k)
@@ -111,9 +112,10 @@ def analysis_kp(splt_k, temp_inf: TmpInf):
     #     ax.set(xlim=(0, 800))
     #     ax.set(xlabel="x")
     #     ax.set(ylabel="y")
+    offset = int(360/temp_inf.get_splitnum())
     with Timer('plotting Kernel De'):
         for i in range(temp_inf.get_splitnum()):
-            sns.set_palette(sns.hls_palette(64), i+1)
+            sns.set_palette(sns.light_palette((i*offset, 90, 60), input="husl"))
             ax = sns.kdeplot(df.query('mesh_id == ' + str(i))['x'], df.query('mesh_id == ' + str(i))['y'], shade=True)
             ax.set(ylim=(600, 0))
             ax.set(xlim=(0, 800))
@@ -122,11 +124,7 @@ def analysis_kp(splt_k, temp_inf: TmpInf):
             ax.set(title="Kernel density estimation")
 
     # ax = sns.kdeplot(df['x'], df['y'], shade=True)
-    return ax.savefig('test.png')
-
-
-
-
+    return ax
 
 def combine_mesh(split_k, split_d, temp_inf):
     """
