@@ -98,8 +98,7 @@ def analysis_kp(splt_k, temp_inf: TmpInf) -> Tuple[Axes, pd.DataFrame]:
     print(df.head(5))
     with Timer('plotting Kernel De'):
         for i in range(temp_inf.get_splitnum()):
-            ax = sns.kdeplot(df.query('mesh_id == ' + str(i))['x'], df.query('mesh_id == ' + str(i))['y'],
-                             cbar=True, shade=True)
+            ax = sns.kdeplot(df.query('mesh_id == ' + str(i))['x'], df.query('mesh_id == ' + str(i))['y'], shade=True)
             ax.set(ylim=(600, 0))
             ax.set(xlim=(0, 800))
             ax.set(xlabel="x")
