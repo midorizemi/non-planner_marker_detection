@@ -62,19 +62,24 @@ def split_kd(keypoints, descrs, splt_num):
 
     return splits_k, splits_d
 
-def merge_rule(splt_k: list, splt_d: list, temp_inf: TmpInf):
+def merge_rule(id, mean, mesh_k_num, temp_inf):
     """
+    #TODO
     何かしらのマージルール
     特徴点数とか，分布とか，特徴量とかでマージが必要なメッシュかをかをはんていする
+    :type mesh_k_num :np.ndarray
     """
-    mesh_k_num = np.array([len(keypoints) for keypoints in splt_k]).reshape(temp_inf.get_mesh_shape())
+
+    if mean > mesh_k_num[temp_inf.get_meshid_vertex(id)]:
+        pass
+
 
 def analysis_num(mesh_k_num):
     #分析１：特徴点数のバラつき
     mean = mesh_k_num.mean()
     median = np.median(mesh_k_num)
     max = np.amax(mesh_k_num)
-    min = np.amax(mesh_k_num)
+    min = np.amin(mesh_k_num)
     peak2peak = np.ptp(mesh_k_num)
     standard_deviation = np.std(mesh_k_num)
     variance = np.var(mesh_k_num)
@@ -96,16 +101,21 @@ def analysis_kp(splt_k, temp_inf: TmpInf) -> Tuple[Axes, pd.DataFrame]:
     df = pd.DataFrame(mesh_k_np, columns=['mesh_id', 'x', 'y'])
     print("Done make data")
     print(df.head(5))
-    with Timer('plotting Kernel De'):
-        for i in range(temp_inf.get_splitnum()):
-            ax = sns.kdeplot(df.query('mesh_id == ' + str(i))['x'], df.query('mesh_id == ' + str(i))['y'], shade=True)
-            ax.set(ylim=(600, 0))
-            ax.set(xlim=(0, 800))
-            ax.set(xlabel="x")
-            ax.set(ylabel="y")
-            ax.set(title="Kernel density estimation")
+    # with Timer('plotting Kernel De'):
+    #     for i in range(temp_inf.get_splitnum()):
+    #         ax = sns.kdeplot(df.query('mesh_id == ' + str(i))['x'], df.query('mesh_id == ' + str(i))['y'], shade=True)
+    #         ax.set(ylim=(600, 0))
+    #         ax.set(xlim=(0, 800))
+    #         ax.set(xlabel="x")
+    #         ax.set(ylabel="y")
+    #         ax.set(title="Kernel density estimation")
 
-    # ax = sns.kdeplot(df['x'], df['y'], shade=True)
+    ax = sns.kdeplot(df['x'], df['y'], shade=True)
+    ax.set(ylim=(600, 0))
+    ax.set(xlim=(0, 800))
+    ax.set(xlabel="x")
+    ax.set(ylabel="y")
+    ax.set(title="Kernel density estimation-"+temp_inf.tmp_img)
     return ax, df
 
 def combine_mesh(split_k, split_d, temp_inf):
@@ -125,25 +135,31 @@ def combine_mesh(split_k, split_d, temp_inf):
         最大値のところとマージする
         :return:
         """
-        if merge_rule() is True:
-            meshid_list = temp_inf.get_meshidlist_nneighbor(i)
-            self_id = mesh_map[temp_inf.get_meshid_vertex(i)]
-            if not self_id == i or len(np.where(mesh_map == i)[0]) > 1:
-                """すでにマージされている"""
-                continue
-            #最大値のindexを求める．
-            dtype = [('muki', int), ('keypoint_num', int), ('merge_id', int)]
-            tmp = np.array([(len(meshid_list)-index, mesh_k_num[id], id) for index, id in enumerate(meshid_list)],
-                           dtype=dtype)
-            tmp.sort(order=['keypoint_num', 'muki'])
-            #idにself_idをマージする
-            merge_id = tmp[-1][2]
-            mesh_map[temp_inf.get_meshid_vertex(i)] = merge_id
-            split_k[merge_id].extend(split_k[i])
-            np.concatenate((split_d[merge_id], split_d[i]))
-            #マージされて要らなくなったメッシュは消す
-            split_k[i] = []
-            split_d[i] = np.array([[]])
+        meshid_list = temp_inf.get_meshidlist_nneighbor(i)
+        self_id = mesh_map[temp_inf.get_meshid_vertex(i)]
+        self_k_num = mesh_k_num[temp_inf.get_meshid_vertex(self_id)]
+        if not self_id == i or len(np.where(mesh_map == i)[0]) > 1 or self_k_num == 0:
+            """すでにマージされている"""
+            continue
+        #最大値のindexを求める．
+        dtype = [('muki', int), ('keypoint_num', int), ('merge_id', int)]
+        tmp = np.array([(len(meshid_list)-index, mesh_k_num[id], id) for index, id in enumerate(meshid_list)],
+                       dtype=dtype)
+        median_nearest = np.median(tmp)
+        if median_nearest >= temp_inf.get_meshid_vertex(self_id):
+            #TODO
+            pass
+
+        tmp.sort(order=['keypoint_num', 'muki'])
+        #idにself_idをマージする, 昇順なので末端
+        merge_id = tmp[-1][2]
+        mesh_map[temp_inf.get_meshid_vertex(i)] = merge_id
+        split_k[merge_id].extend(split_k[i])
+        np.concatenate((split_d[merge_id], split_d[i]))
+        #マージされて要らなくなったメッシュは消す
+        split_k[i] = []
+        split_d[i] = np.array([[]])
+        mesh_k_num[temp_inf.get_meshid_vertex(self_id)] = 0
 
 
 def affine_detect_into_mesh(detector, split_num, img1, mask=None, simu_param='default'):
@@ -227,9 +243,12 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     print("{0:4f}, {1:4f}, {2:4d}, {3:4d}, {4:4d}, {5:4f}, {6:4f}".format(*al_vals))
 
     import seaborn as sns
+#もし，SSHサーバーサイドで実行するなら，
+    #import matplotlib
+    #matplotlib.use('Agg')
     import matplotlib.pyplot as plt
 
-    plt.figure(figsize=(12, 9))
+    # plt.figure(figsize=(12, 9))
     h = sns.heatmap(mesh_k_num, annot=True, fmt='g', cmap='Blues')
     h.set(xlabel="x")
     h.set(ylabel="y")
@@ -238,9 +257,9 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     h_fig = h.get_figure()
     h_fig.savefig(os.path.join(output_dir, 'meshk_num_'+temp_inf.tmp_img))
 
-    g, df = analysis_kp(splt_k, temp_inf)
-    g_fig = g.get_figure()
-    g_fig.savefig(os.path.join(output_dir, 'kyepoint_KED_map_'+temp_inf.tmp_img))
+    # g, df = analysis_kp(splt_k, temp_inf)
+    # g_fig = g.get_figure()
+    # g_fig.savefig(os.path.join(output_dir, 'Kyepoint_KED_map_'+temp_inf.tmp_img))
 
 
 
