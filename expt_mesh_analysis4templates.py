@@ -25,8 +25,16 @@ from make_database import split_affinesim_combinable as slac
 # local modules
 
 logger = logging.getLogger(__name__)
+def test_module():
+    import os
+    import sys
+    dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
+    fn1 = os.path.abspath(os.path.join(dir, 'data/templates/qrmarker.png'))
+    fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
+    return dir, fn1, fn2
 
 if __name__ == '__main__':
+    test_module = test_module()
     expt_path = myfsys.setup_expt_directory(os.path.basename(__file__))
     # logging.basicConfig(filename=os.path.join(expt_path, 'log.txt'), level=logging.DEBUG)
     logging.basicConfig(level=logging.DEBUG,
@@ -94,5 +102,5 @@ if __name__ == '__main__':
         # testcase_fns.sort()
         # print(testcase_fns)
 
-        slac.main_1(expt_name, fn1=template_full_fn, fn2='test.png', **template_information)
+        slac.main_1(expt_name, fn1=template_full_fn, fn2=test_module[2], **template_information)
 
