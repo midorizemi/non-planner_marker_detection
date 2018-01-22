@@ -233,7 +233,7 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     h = sns.heatmap(mesh_k_num, annot=True, fmt='g', cmap='Blues')
     h.set(xlabel="x")
     h.set(ylabel="y")
-    h.set(title="Heatmap of eypoint amounts")
+    h.set(title="Heatmap of keypoint amounts -" + temp_inf.tmp_img)
     output_dir = myfm.setup_output_directory(expt_name, "plots")
     h_fig = h.get_figure()
     h_fig.savefig(os.path.join(output_dir, 'meshk_num_'+temp_inf.tmp_img))
