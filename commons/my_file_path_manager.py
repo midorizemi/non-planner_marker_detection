@@ -74,7 +74,7 @@ def getf_input(testcase: str, test_sample: str) -> str:
     testcase_dir = getd_inputs(testcase)
     return os.path.abspath(os.path.join(testcase_dir, test_sample))
 
-def getf_output(expt_testcase: Tuple[str, str, str], test_sample: str) -> str:
+def getf_output(expt_testcase, test_sample: str) -> str:
     """(expt_name, testcase_name) or list type
     :param expt_testcase: tuple[str]
     :param test_sample: str

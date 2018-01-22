@@ -1,5 +1,5 @@
 class TemplateInfo:
-    def __init__(self, _fn="tmp.png", _cols=800, _rows=600, _scols=8, _srows=8, _nneighbor=4):
+    def __init__(self, _fn="tmp.png", _cols=800, _rows=600, _scols=8, _srows=8, _nneighbor=4, template_img='qrmarker.png'):
         self.fn = _fn
         self.cols = _cols
         self.rows = _rows
@@ -8,6 +8,7 @@ class TemplateInfo:
         self.offset_c = self.cols // self.scols
         self.offset_r = self.rows // self.srows
         self.nneighbor = _nneighbor
+        self.tmp_img = template_img
 
     def get_splitnum(self):
         return self.scols * self.srows

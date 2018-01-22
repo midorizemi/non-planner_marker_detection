@@ -27,6 +27,7 @@ from commons.template_info import TemplateInfo as TmpInf
 from commons.custom_find_obj import explore_match_for_meshes, filter_matches_wcross as c_filter
 from commons.custom_find_obj import calclate_Homography, calclate_Homography_hard, draw_matches_for_meshes
 from make_database import make_splitmap as mks
+from commons import my_file_path_manager as myfm
 import make_database.split_affinesim as splaf
 
 def split_kd(keypoints, descrs, splt_num):
@@ -67,15 +68,6 @@ def merge_rule(splt_k: list, splt_d: list, temp_inf: TmpInf):
     特徴点数とか，分布とか，特徴量とかでマージが必要なメッシュかをかをはんていする
     """
     mesh_k_num = np.array([len(keypoints) for keypoints in splt_k]).reshape(temp_inf.get_mesh_shape())
-    #for i, kps in enumerate(splt_k):
-    #    for kp in kps:
-    #        x, y = np.int32(kp.pt)
-    #        i = np.int32(i)
-    #        mkn.append([i, x, y])
-
-
-
-            #分析2：特徴点座標のバラつき
 
 def analysis_num(mesh_k_num):
     #分析１：特徴点数のバラつき
@@ -88,35 +80,26 @@ def analysis_num(mesh_k_num):
     variance = np.var(mesh_k_num)
     return mean, median, max, min, peak2peak, standard_deviation, variance
 
-def analysis_kp(splt_k, temp_inf: TmpInf):
-    import pandas as pd
-    import matplotlib.pyplot as plt
-    from matplotlib.colors import ListedColormap
+from matplotlib.axes import Axes
+import pandas as pd
+from typing import Tuple
+def analysis_kp(splt_k, temp_inf: TmpInf) -> Tuple[Axes, pd.DataFrame]:
+    """
+    #分析2：特徴点座標のバラつき
+    :param splt_k:
+    :param temp_inf:
+    :return:
+    """
     import seaborn as sns
-    dtype = [('mesh_id', int), ('x', int), ('y', int)]
     mesh_k_np = [[np.int32(i), np.int32(kp.pt[0]), np.int32(kp.pt[1])] for i, keypoints in enumerate(splt_k)
         for kp in keypoints]
     df = pd.DataFrame(mesh_k_np, columns=['mesh_id', 'x', 'y'])
     print("Done make data")
     print(df.head(5))
-
-    #grid = sns.FacetGrid(df, col='mesh_id', hue='mesh_id', col_wrap=8, size=2)
-    #print("makeing kde map")
-    #grid = grid.map(sns.kdeplot(df['x'], df['y'], x="x", y="y"))
-    #return grid
-
-    # with sns.hls_palette(64):
-    #     #ax = sns.kdeplot('x', 'y', df[df['mesh_id'] == i].x, df[df['mesh_id'] == i].y)
-    #     ax = sns.kdeplot(data = df)
-    #     ax.set(ylim=(600, 0))
-    #     ax.set(xlim=(0, 800))
-    #     ax.set(xlabel="x")
-    #     ax.set(ylabel="y")
-    offset = int(360/temp_inf.get_splitnum())
     with Timer('plotting Kernel De'):
         for i in range(temp_inf.get_splitnum()):
-            sns.set_palette(sns.light_palette((i*offset, 90, 60), input="husl"))
-            ax = sns.kdeplot(df.query('mesh_id == ' + str(i))['x'], df.query('mesh_id == ' + str(i))['y'], shade=True)
+            ax = sns.kdeplot(df.query('mesh_id == ' + str(i))['x'], df.query('mesh_id == ' + str(i))['y'],
+                             cbar=True, shade=True)
             ax.set(ylim=(600, 0))
             ax.set(xlim=(0, 800))
             ax.set(xlabel="x")
@@ -124,7 +107,7 @@ def analysis_kp(splt_k, temp_inf: TmpInf):
             ax.set(title="Kernel density estimation")
 
     # ax = sns.kdeplot(df['x'], df['y'], shade=True)
-    return ax
+    return ax, df
 
 def combine_mesh(split_k, split_d, temp_inf):
     """
@@ -162,8 +145,6 @@ def combine_mesh(split_k, split_d, temp_inf):
             #マージされて要らなくなったメッシュは消す
             split_k[i] = []
             split_d[i] = np.array([[]])
-
-
 
 
 def affine_detect_into_mesh(detector, split_num, img1, mask=None, simu_param='default'):
@@ -212,7 +193,61 @@ def test_module():
 
     template_information = {"_fn":"tmp.png", "_cols":800, "_rows":600, "_scols":8, "_srows":8, "_nneighbor":4}
     temp_inf = TmpInf(**template_information)
-    return temp_inf, imgQ, imgT, detector, matcher, dir
+    return temp_inf, imgQ, imgT, detector, matcher
+
+def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
+    import os
+    import sys
+    imgQ = cv2.imread(fn1, 0)
+    imgT = cv2.imread(fn2, 0)
+    detector, matcher = init_feature(feature)
+    if imgQ is None:
+        print('Failed to load fn1:', fn1)
+        sys.exit(1)
+
+    if imgT is None:
+        print('Failed to load fn2:', fn2)
+        sys.exit(1)
+
+    if detector is None:
+        print('unknown feature:', feature)
+        sys.exit(1)
+
+    temp_inf = TmpInf(**template_information)
+
+    print('using', feature)
+    with Timer('calculate Keypoints Descriptors and splitting....'):
+        splt_k, splt_d = affine_detect_into_mesh(detector, temp_inf.get_splitnum(), imgQ, simu_param='asift')
+
+    mesh_k_num = np.array([len(keypoints) for keypoints in splt_k]).reshape(temp_inf.get_mesh_shape())
+
+    # mean, median, max, min, peak2peak, standard_deviation, variance = analysis_num(mesh_k_num)
+    print("plot mesh keypoint heatmap")
+    al_vals = analysis_num(mesh_k_num)
+    print("平均, 中央値, 最大値, 最小値, 値の範囲, 標準偏差, 分散")
+    print("{0:4f}, {1:4f}, {2:4d}, {3:4d}, {4:4d}, {5:4f}, {6:4f}".format(*al_vals))
+
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(12, 9))
+    h = sns.heatmap(mesh_k_num, annot=True, fmt='g', cmap='Blues')
+    h.set(xlabel="x")
+    h.set(ylabel="y")
+    h.set(title="Heatmap of eypoint amounts")
+    output_dir = myfm.setup_output_directory(expt_name, "plots")
+    h_fig = h.get_figure()
+    h_fig.savefig(os.path.join(output_dir, 'meshk_num_'+temp_inf.tmp_img))
+
+    g, df = analysis_kp(splt_k, temp_inf)
+    g_fig = g.get_figure()
+    g_fig.savefig(os.path.join(output_dir, 'kyepoint_KED_map_'+temp_inf.tmp_img))
+
+
+
+
+
+
 
 if __name__ == '__main__':
     print(__doc__)
