@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 def test_module():
     import os
     import sys
-    dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
+    dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
     fn1 = os.path.abspath(os.path.join(dir, 'data/templates/qrmarker.png'))
     fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
     return dir, fn1, fn2
