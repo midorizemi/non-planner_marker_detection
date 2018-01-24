@@ -244,9 +244,10 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
 
     import seaborn as sns
 #もし，SSHサーバーサイドで実行するなら，
-    #import matplotlib
-    #matplotlib.use('Agg')
+    import matplotlib
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
+    plt.switch_backend('agg')
 
     # plt.figure(figsize=(12, 9))
     h = sns.heatmap(mesh_k_num, annot=True, fmt='g', cmap='Blues')
