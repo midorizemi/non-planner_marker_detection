@@ -16,6 +16,9 @@ from __future__ import print_function
 # built-in modules
 from multiprocessing.pool import ThreadPool
 
+#解析
+import pandas as pd
+
 import cv2
 import numpy as np
 
@@ -85,38 +88,19 @@ def analysis_num(mesh_k_num):
     variance = np.var(mesh_k_num)
     return mean, median, max, min, peak2peak, standard_deviation, variance
 
-from matplotlib.axes import Axes
-import pandas as pd
-from typing import Tuple
-def analysis_kp(splt_k, temp_inf: TmpInf) -> Tuple[Axes, pd.DataFrame]:
+def analysis_kp(splt_k, temp_inf: TmpInf) -> pd.DataFrame:
     """
     #分析2：特徴点座標のバラつき
     :param splt_k:
     :param temp_inf:
     :return:
     """
-    import seaborn as sns
     mesh_k_np = [[np.int32(i), np.int32(kp.pt[0]), np.int32(kp.pt[1])] for i, keypoints in enumerate(splt_k)
         for kp in keypoints]
     df = pd.DataFrame(mesh_k_np, columns=['mesh_id', 'x', 'y'])
     print("Done make data")
     print(df.head(5))
-    # with Timer('plotting Kernel De'):
-    #     for i in range(temp_inf.get_splitnum()):
-    #         ax = sns.kdeplot(df.query('mesh_id == ' + str(i))['x'], df.query('mesh_id == ' + str(i))['y'], shade=True)
-    #         ax.set(ylim=(600, 0))
-    #         ax.set(xlim=(0, 800))
-    #         ax.set(xlabel="x")
-    #         ax.set(ylabel="y")
-    #         ax.set(title="Kernel density estimation")
-
-    ax = sns.kdeplot(df['x'], df['y'], shade=True)
-    ax.set(ylim=(600, 0))
-    ax.set(xlim=(0, 800))
-    ax.set(xlabel="x")
-    ax.set(ylabel="y")
-    ax.set(title="Kernel density estimation-"+temp_inf.tmp_img)
-    return ax, df
+    return df
 
 def combine_mesh(split_k, split_d, temp_inf):
     """
@@ -185,6 +169,7 @@ def count_keypoints(splt_kpQ):
     for kps in splt_kpQ:
         len_s_kp += len(kps)
     return len_s_kp
+
 def test_module():
     import os
     import sys
@@ -209,58 +194,6 @@ def test_module():
     template_information = {"_fn":"tmp.png", "_cols":800, "_rows":600, "_scols":8, "_srows":8, "_nneighbor":4}
     temp_inf = TmpInf(**template_information)
     return temp_inf, imgQ, imgT, detector, matcher
-
-def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
-    import os
-    import sys
-    imgQ = cv2.imread(fn1, 0)
-    imgT = cv2.imread(fn2, 0)
-    detector, matcher = init_feature(feature)
-    if imgQ is None:
-        print('Failed to load fn1:', fn1)
-        sys.exit(1)
-
-    if imgT is None:
-        print('Failed to load fn2:', fn2)
-        sys.exit(1)
-
-    if detector is None:
-        print('unknown feature:', feature)
-        sys.exit(1)
-
-    temp_inf = TmpInf(**template_information)
-
-    print('using', feature)
-    with Timer('calculate Keypoints Descriptors and splitting....'):
-        splt_k, splt_d = affine_detect_into_mesh(detector, temp_inf.get_splitnum(), imgQ, simu_param='asift')
-
-    mesh_k_num = np.array([len(keypoints) for keypoints in splt_k]).reshape(temp_inf.get_mesh_shape())
-
-    # mean, median, max, min, peak2peak, standard_deviation, variance = analysis_num(mesh_k_num)
-    print("plot mesh keypoint heatmap")
-    al_vals = analysis_num(mesh_k_num)
-    print("平均, 中央値, 最大値, 最小値, 値の範囲, 標準偏差, 分散")
-    print("{0:4f}, {1:4f}, {2:4d}, {3:4d}, {4:4d}, {5:4f}, {6:4f}".format(*al_vals))
-
-    import seaborn as sns
-    #もし，SSHサーバーサイドで実行するなら，
-    #import matplotlib
-    #matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-
-    # plt.figure(figsize=(12, 9))
-    h = sns.heatmap(mesh_k_num, annot=True, fmt='g', cmap='Blues')
-    h.set(xlabel="x")
-    h.set(ylabel="y")
-    h.set(title="Heatmap of keypoint amounts -" + temp_inf.tmp_img)
-    output_dir = myfm.setup_output_directory(expt_name, "plots")
-    h_fig = h.get_figure()
-    h_fig.savefig(os.path.join(output_dir, 'meshk_num_'+temp_inf.tmp_img))
-
-    # g, df = analysis_kp(splt_k, temp_inf)
-    # g_fig = g.get_figure()
-    # g_fig.savefig(os.path.join(output_dir, 'Kyepoint_KED_map_'+temp_inf.tmp_img))
-
 
 if __name__ == '__main__':
     print(__doc__)
