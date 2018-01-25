@@ -243,7 +243,7 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     print("{0:4f}, {1:4f}, {2:4d}, {3:4d}, {4:4d}, {5:4f}, {6:4f}".format(*al_vals))
 
     import seaborn as sns
-#もし，SSHサーバーサイドで実行するなら，
+    #もし，SSHサーバーサイドで実行するなら，
     #import matplotlib
     #matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -260,11 +260,6 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     # g, df = analysis_kp(splt_k, temp_inf)
     # g_fig = g.get_figure()
     # g_fig.savefig(os.path.join(output_dir, 'Kyepoint_KED_map_'+temp_inf.tmp_img))
-
-
-
-
-
 
 
 if __name__ == '__main__':
