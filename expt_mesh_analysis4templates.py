@@ -125,7 +125,7 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     #         ax.set(ylabel="y")
     #         ax.set(title="Kernel density estimation")
 
-    plt.figure()
+    plt.figure(figsize=(16, 12))
     sns.set("paper", "whitegrid", "dark", font_scale=1.5)
     g = sns.kdeplot(df['x'], df['y'], shade=True, shade_lowest=False)
     g.set(ylim=(600, 0))
@@ -135,7 +135,6 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     g.set(title="Kernel density estimation-"+temp_inf.tmp_img)
     g_fig = g.get_figure()
     g_fig.savefig(pp, format='pdf')
-
 
     logger.info('show mesh map')
     plt.figure()
@@ -152,7 +151,7 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
         msplt_k, msplt_d, mmesh_k_num, mmesh_map = slac.combine_mesh(splt_k, splt_d, temp_inf)
 
     logger.info('show merged mesh map')
-    plt.figure()
+    plt.figure(figsize=(16, 12))
     sns.set("paper", "whitegrid", "dark", font_scale=1.5)
     merged_map_ax = sns.heatmap(mmesh_map, annot=True, fmt="d")
     merged_map_ax.set(xlabel="x")
@@ -161,7 +160,7 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     merged_map_ax_fig = merged_map_ax.get_figure()
     merged_map_ax_fig.savefig(pp, format='pdf')
 
-    plt.figure()
+    plt.figure(figsize=(16, 12))
     sns.set("paper", "whitegrid", "dark", font_scale=1.5)
     mh = sns.heatmap(mmesh_k_num, annot=True, fmt='d', cmap='Blues')
     mh.set(xlabel="x")
