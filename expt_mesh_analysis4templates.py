@@ -17,16 +17,20 @@ import os
 if os.getenv('DISPLAY') is None:
     #もし，SSHサーバーサイドで実行するなら，
     import matplotlib
-    matplotlib.use('agg')
+    matplotlib.use('pdf')
     import matplotlib.pyplot as plt
-    plt.switch_backend('agg')
+    plt.switch_backend('pdf')
+    from matplotlib.backends.backend_pdf import PdfPages
 else:
     import matplotlib
+    from matplotlib.backends.backend_pdf import PdfPages
     import matplotlib.pyplot as plt
 import seaborn as sns
 
 import cv2
 import numpy as np
+
+import pandas
 
 from commons import expt_modules as emod, my_file_path_manager as myfsys
 from commons.custom_find_obj import calclate_Homography
@@ -43,7 +47,7 @@ def test_module():
     fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
     return dir, fn1, fn2
 
-def setup(**kwargs):
+def expt_setting(**kwargs):
     import sys
     imgQ = cv2.imread(kwargs['fn1'], 0)
     imgT = cv2.imread(kwargs['fn2'], 0)
@@ -65,8 +69,9 @@ def setup(**kwargs):
 
 
 def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
-    import sys
-    kw= {'fn1':fn1, 'fn2':fn2, 'feature':feature, 'template_information':template_information}
+    kw = {'fn1':fn1, 'fn2':fn2, 'feature':feature, 'template_information':template_information}
+    print(kw)
+    print(expt_name)
     # imgQ = cv2.imread(fn1, 0)
     # imgT = cv2.imread(fn2, 0)
     # detector, matcher = init_feature(feature)
@@ -83,9 +88,7 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     #     sys.exit(1)
     #
     # temp_inf = slac.TmpInf(**template_information)
-    imgQ, imgT, detector, matcher, temp_inf = setup(**kw)
-    pass
-
+    imgQ, imgT, detector, matcher, temp_inf = expt_setting(**kw)
 
     print('using', feature)
     with Timer('calculate Keypoints Descriptors and splitting....'):
@@ -100,15 +103,16 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     print("{0:4f}, {1:4f}, {2:4d}, {3:4d}, {4:4d}, {5:4f}, {6:4f}".format(*al_vals))
 
 
-    sns.set_context("poster")
-    # plt.figure(figsize=(12, 9))
-    h = sns.heatmap(mesh_k_num, annot=True, fmt='g', cmap='Blues')
+    output_dir = slac.myfm.setup_output_directory(expt_name, "plots")
+    pp = PdfPages(os.path.join(output_dir, 'analyse_'+temp_inf.tmp_img+'.pdf'))
+    plt.figure(figsize=(16, 12))
+    sns.set("paper", "whitegrid", "dark", font_scale=1.5)
+    h = sns.heatmap(mesh_k_num, annot=True, fmt='d', cmap='Blues')
     h.set(xlabel="x")
     h.set(ylabel="y")
     h.set(title="Heatmap of keypoint amounts -" + temp_inf.tmp_img)
-    output_dir = slac.myfm.setup_output_directory(expt_name, "plots")
     h_fig = h.get_figure()
-    h_fig.savefig(os.path.join(output_dir, 'meshk_num_'+temp_inf.tmp_img))
+    h_fig.savefig(pp, format='pdf')
 
     df = slac.analysis_kp(splt_k, temp_inf)
 
@@ -121,15 +125,64 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     #         ax.set(ylabel="y")
     #         ax.set(title="Kernel density estimation")
 
-    g = sns.kdeplot(df['x'], df['y'], shade=True, )
+    plt.figure()
+    sns.set("paper", "whitegrid", "dark", font_scale=1.5)
+    g = sns.kdeplot(df['x'], df['y'], shade=True, shade_lowest=False)
     g.set(ylim=(600, 0))
     g.set(xlim=(0, 800))
     g.set(xlabel="Width of image")
     g.set(ylabel="Height of image")
     g.set(title="Kernel density estimation-"+temp_inf.tmp_img)
     g_fig = g.get_figure()
-    g_fig.savefig(os.path.join(output_dir, 'Kyepoint_KED_map_'+temp_inf.tmp_img))
+    g_fig.savefig(pp, format='pdf')
 
+
+    logger.info('show mesh map')
+    plt.figure()
+    sns.set("paper", "whitegrid", "dark", font_scale=1.5)
+    mesh_map = temp_inf.get_mesh_map()
+    mmap_ax = sns.heatmap(mesh_map, annot=True, fmt="d")
+    mmap_ax.set(xlabel="x")
+    mmap_ax.set(ylabel="y")
+    mmap_ax.set(title="Mesh map -" + temp_inf.tmp_img)
+    mmap_ax_fig = h.get_figure()
+    mmap_ax_fig.savefig(pp, format='pdf')
+
+    with Timer('merging'):
+        msplt_k, msplt_d, mmesh_k_num, mmesh_map = slac.combine_mesh(splt_k, splt_d, temp_inf)
+
+    logger.info('show merged mesh map')
+    plt.figure()
+    sns.set("paper", "whitegrid", "dark", font_scale=1.5)
+    merged_map_ax = sns.heatmap(mmesh_map, annot=True, fmt="d")
+    merged_map_ax.set(xlabel="x")
+    merged_map_ax.set(ylabel="y")
+    merged_map_ax.set(title="Merged mesh map -" + temp_inf.tmp_img)
+    merged_map_ax_fig = merged_map_ax.get_figure()
+    merged_map_ax_fig.savefig(pp, format='pdf')
+
+    plt.figure()
+    sns.set("paper", "whitegrid", "dark", font_scale=1.5)
+    mh = sns.heatmap(mmesh_k_num, annot=True, fmt='d', cmap='Blues')
+    mh.set(xlabel="x")
+    mh.set(ylabel="y")
+    mh.set(title="Heatmap of merged keypoint amounts -" + temp_inf.tmp_img)
+    mh_fig = mh.get_figure()
+    mh_fig.savefig(pp, format='pdf')
+
+    # pp.savefig()
+    pp.close()
+
+
+def main_2(expt_name, fn1, fn2, feature='sift', **template_information):
+    kw = {'fn1':fn1, 'fn2':fn2, 'feature':feature, 'template_information':template_information}
+    imgQ, imgT, detector, matcher, temp_inf = expt_setting(**kw)
+
+    print('using', feature)
+    with Timer('calculate Keypoints Descriptors and splitting....'):
+        splt_k, splt_d = slac.affine_detect_into_mesh(detector, temp_inf.get_splitnum(), imgQ, simu_param='asift')
+    with Timer('merging'):
+        msplt_k, msplt_d, mmesh_k_num, mmesh_map = slac.combine_mesh(splt_k, splt_d, temp_inf)
 
 if __name__ == '__main__':
     test_module = test_module()
@@ -180,7 +233,7 @@ if __name__ == '__main__':
 
     logger.info(__doc__.format(os.path.basename(__file__)))
     a = myfsys.make_list_template_filename()
-    a = emod.only(a, 'glass.png')
+    # a = emod.only(a, 'nabe.png')
     expt_name = os.path.basename(expt_path)
     for template_fn in a:
         template_information = {"_fn":"tmp.png", "template_img":template_fn,

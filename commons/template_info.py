@@ -54,25 +54,40 @@ class TemplateInfo:
                 return None
             else:
                 return x
+        def v_(y, *args):
+            a = list(args)
+            if int(id/self.scols) == 0:
+                #上辺
+                a[1] = -1
+            if int(id%self.scols) == 0:
+                #左辺
+                a[0] = -1
+            if int(id/self.scols) == self.srows -1:
+                #下辺
+                a[3] = -1
+            if int(id%self.scols) == self.scols -1:
+                #サ変
+                a[2] = -1
+            return a
 
         if self.nneighbor == 4:
             a = [id - 1, id - self.scols, id + 1, id + self.scols]
-            return list(map(validate, a))
+            return list(map(validate, v_(id, *a)))
         elif self.nneighbor == 8:
             a = [id - 1, id - 1 - self.scols,
                  id - self.scols, id + 1 - self.scols, id + 1,
                  id + 1 + self.scols, id + self.scols, id + self.scols - 1]
-            return list(map(validate, a))
+            return list(map(validate, v_(a)))
         elif self.nneighbor == 3:
             """三角メッシュ"""
             if id % 2 == 0:
                 """上三角"""
                 a = [id - 1, id - (self.scols - 1), id + 1]
-                return list(map(validate, a))
+                return list(map(validate, v_(a)))
             else:
                 """下三角"""
                 a = [id - 1, id + 1, id + (self.scols - 1)]
-                return list(map(validate, a))
+                return list(map(validate, v_(a)))
 
     def get_nneighbor(self, id, mesh_map=None):
         pass

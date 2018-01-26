@@ -24,6 +24,7 @@ import numpy as np
 
 # local modules
 from commons.common import Timer
+from commons.my_common import set_trace, debug
 from commons.find_obj import init_feature
 from commons.affine_base import affine_detect
 from commons.template_info import TemplateInfo as TmpInf
@@ -61,6 +62,8 @@ def split_kd(keypoints, descrs, splt_num):
         splits_d[split_tmp_img[y, x][0]].append(descr)
 
     for i, split_d in enumerate(splits_d):
+        if len(splits_k[i]) == len(splits_d):
+            sys.exit(1)
         splits_d[i] = np.array(split_d, dtype=np.float32)
 
     return splits_k, splits_d
@@ -95,25 +98,25 @@ def analysis_kp(splt_k, temp_inf: TmpInf) -> pd.DataFrame:
     :param temp_inf:
     :return:
     """
-    mesh_k_np = [[np.int32(i), np.int32(kp.pt[0]), np.int32(kp.pt[1])] for i, keypoints in enumerate(splt_k)
+    marker_k_np = [[np.int32(i), np.int32(kp.pt[0]), np.int32(kp.pt[1])] for i, keypoints in enumerate(splt_k)
         for kp in keypoints]
-    df = pd.DataFrame(mesh_k_np, columns=['mesh_id', 'x', 'y'])
+    df = pd.DataFrame(marker_k_np, columns=['mesh_id', 'x', 'y'])
     print("Done make data")
     print(df.head(5))
     return df
 
-def combine_mesh(split_k, split_d, temp_inf):
+def combine_mesh(splt_k, splt_d, temp_inf):
     """
     :type temp_inf: TmpInf
-    :param split_k:
-    :param split_d:
+    :param splt_k:
+    :param splt_d:
     :param temp_inf:
     :return:
     """
     mesh_map = temp_inf.get_mesh_map()
-    mesh_k_num = np.array(len(keypoints) for keypoints in split_k).reshape(temp_inf.get_mesh_shape())
+    mesh_k_num = np.array([len(keypoints) for keypoints in splt_k]).reshape(temp_inf.get_mesh_shape())
 
-    for i, kd in enumerate(zip(split_k, split_d)):
+    for i, kd in enumerate(zip(splt_k, splt_d)):
         """
         矩形メッシュをマージする．4近傍のマージ．順番は左，上，右，下．
         最大値のところとマージする
@@ -127,23 +130,45 @@ def combine_mesh(split_k, split_d, temp_inf):
             continue
         #最大値のindexを求める．
         dtype = [('muki', int), ('keypoint_num', int), ('merge_id', int)]
-        tmp = np.array([(len(meshid_list)-index, mesh_k_num[id], id) for index, id in enumerate(meshid_list)],
-                       dtype=dtype)
-        median_nearest = np.median(tmp)
-        if median_nearest >= temp_inf.get_meshid_vertex(self_id):
-            #TODO
-            pass
+        # tmp = np.array([list(len(meshid_list)-index, mesh_k_num[temp_inf.get_meshid_vertex(id)], id )
+        #                for index, id in enumerate(meshid_list) if id is not None]).astype(np.int64)
+        tmp = []
+        # for index, id in enumerate(meshid_list):
+        #     if id is not None:
+        #         tmp.extend([len(meshid_list) - index, mesh_k_num[temp_inf.get_meshid_vertex(id)], id])
+        #tmp = np.array(tmp)reshape(int(len(tmp)/3, 3).astype(np.int64)
+        try:
+            for index, id in enumerate(meshid_list):
+                if id is not None:
+                    tmp.append([len(meshid_list) - index, mesh_k_num[temp_inf.get_meshid_vertex(id)], id])
+        except(IndexError):
+            set_trace()
 
-        tmp.sort(order=['keypoint_num', 'muki'])
+        tmp = np.array(tmp).astype(np.int64)
+        median_nearest = np.median(tmp[:, 1])
+        if median_nearest < mesh_k_num[temp_inf.get_meshid_vertex(self_id)]:
+            #TODO マージ判定
+            #近傍中の中央値よりも注目メッシュのキーポイント数が大きい場合は無視する
+            continue
+        tmp.dtype = dtype
+        tmp.sort(order=['keypoint_num', 'muki']) #左回りでかつキーポイント数が最大
         #idにself_idをマージする, 昇順なので末端
-        merge_id = tmp[-1][2]
+        merge_id = tmp[-1][0][2]
         mesh_map[temp_inf.get_meshid_vertex(i)] = merge_id
-        split_k[merge_id].extend(split_k[i])
-        np.concatenate((split_d[merge_id], split_d[i]))
+        splt_k[merge_id].extend(kd[0])
+        try:
+            np.concatenate((splt_d[merge_id], kd[1]))
+        except(IndexError, ValueError):
+            set_trace()
+
         #マージされて要らなくなったメッシュは消す
-        split_k[i] = []
-        split_d[i] = np.array([[]])
+        splt_k[i] = None
+        splt_d[i] = None
         mesh_k_num[temp_inf.get_meshid_vertex(self_id)] = 0
+
+    return splt_k, splt_d, mesh_k_num, mesh_map
+
+
 
 
 def affine_detect_into_mesh(detector, split_num, img1, mask=None, simu_param='default'):
