@@ -156,7 +156,6 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     # pp.savefig()
     pp.close()
 
-
 def main_2(expt_name, fn1, fn2, feature='sift', **template_information):
     kw = {'fn1':fn1, 'fn2':fn2, 'feature':feature, 'template_information':template_information}
     imgQ, imgT, detector, matcher, temp_inf = expt_setting(**kw)

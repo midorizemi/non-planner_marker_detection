@@ -32,9 +32,6 @@ def debug(f, *args, **kwargs):
     pdb = Pdb(color_scheme='Linux')
     return pdb.runcall(f, *args, **kwargs)
 
-def get_pikle(*args, **kwargs):
-    return os.path.join(kwargs.get('base_name', ''), *args, kwargs.get('fn', 'example') + '.pikle')
-
 def load_pikle(fn):
     with open(fn, mode='rb') as f:
         index, des = pickle.load(f)
@@ -43,3 +40,5 @@ def load_pikle(fn):
         temp = cv2.KeyPoint(x=p[0][0], y=p[0][1], _size=p[1], _angle=p[2],
                             _response=p[3], _octave=p[4], _class_id=p[5])
         kp.append(temp)
+
+    return kp, des

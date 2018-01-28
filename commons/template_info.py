@@ -91,3 +91,7 @@ class TemplateInfo:
 
     def get_nneighbor(self, id, mesh_map=None):
         pass
+
+
+    def get_mesh_corners(self, ):
+        pass

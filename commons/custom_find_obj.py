@@ -196,10 +196,10 @@ def explore_match_for_meshes(win, imgT, imgQ, kp_pairs, status=None, Hs=None):
     return vis
 
 
-def calclate_Homography(pT, pQ, pairs):
+def calclate_Homography(pQ, pT, pairs):
     logger.info('Now in {}'.format(inspect.currentframe().f_code.co_name))
     if len(pQ) >= 4:
-        H, status = cv2.findHomography(pT, pQ, cv2.RANSAC, 5.0)
+        H, status = cv2.findHomography(pQ, pT, cv2.RANSAC, 5.0)
         if status is not None and not len(status) == 0 :
             logger.info("{0} / {1} = {2:0.3f} inliers/matched=ratio".format(np.sum(status), len(status), np.sum(status)/len(status)))
         # do not draw outliers (there will be a lot of them)
@@ -210,11 +210,11 @@ def calclate_Homography(pT, pQ, pairs):
 
     return pairs, H, status
 
-def calclate_Homography_hard(pT, pQ, pairs):
+def calclate_Homography_hard(pQ, pT, pairs):
     """calculation homography but hard boarder"""
     logger.info('Now in {}'.format(inspect.currentframe().f_code.co_name))
     if len(pQ) >= 16:
-        H, status = cv2.findHomography(pT, pQ, cv2.RANSAC, 5.0)
+        H, status = cv2.findHomography(pQ, pT, cv2.RANSAC, 5.0)
         logger.info('%d / %d  inliers/matched' % (np.sum(status), len(status)))
         # do not draw outliers (there will be a lot of them)
         pairs = [kpp for kpp, flag in zip(pairs, status) if flag]
@@ -223,3 +223,15 @@ def calclate_Homography_hard(pT, pQ, pairs):
         logger.info('%d matches found, not enough for homography estimation' % len(pQ))
 
     return pairs, H, status
+
+def calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs):
+    Hs = []
+    statuses = []
+    kp_pairs_long = []
+    for pQ, pT, pairs in zip(mesh_pQ, mesh_pT, mesh_pairs):
+        pairs, H, status = calclate_Homography(pQ, pT, pairs)
+        Hs.append(H)
+        statuses.append(status)
+        for p in pairs:
+            kp_pairs_long.append(p)
+    return Hs, statuses, kp_pairs_long

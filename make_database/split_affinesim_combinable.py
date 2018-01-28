@@ -21,15 +21,16 @@ import pandas as pd
 
 import cv2
 import numpy as np
+import os
 
 # local modules
 from commons.common import Timer
-from commons.my_common import set_trace, debug
+from commons.my_common import set_trace, debug, load_pikle
 from commons.find_obj import init_feature
 from commons.affine_base import affine_detect
 from commons.template_info import TemplateInfo as TmpInf
 from commons.custom_find_obj import explore_match_for_meshes, filter_matches_wcross as c_filter
-from commons.custom_find_obj import calclate_Homography, calclate_Homography_hard, draw_matches_for_meshes
+from commons.custom_find_obj import calclate_Homography4splitmesh, draw_matches_for_meshes
 from make_database import make_splitmap as mks
 from commons import my_file_path_manager as myfm
 import make_database.split_affinesim as splaf
@@ -67,43 +68,6 @@ def split_kd(keypoints, descrs, splt_num):
         splits_d[i] = np.array(split_d, dtype=np.float32)
 
     return splits_k, splits_d
-
-def merge_rule(id, mean, mesh_k_num, temp_inf):
-    """
-    #TODO
-    何かしらのマージルール
-    特徴点数とか，分布とか，特徴量とかでマージが必要なメッシュかをかをはんていする
-    :type mesh_k_num :np.ndarray
-    """
-
-    if mean > mesh_k_num[temp_inf.get_meshid_vertex(id)]:
-        pass
-
-
-def analysis_num(mesh_k_num):
-    #分析１：特徴点数のバラつき
-    mean = mesh_k_num.mean()
-    median = np.median(mesh_k_num)
-    max = np.amax(mesh_k_num)
-    min = np.amin(mesh_k_num)
-    peak2peak = np.ptp(mesh_k_num)
-    standard_deviation = np.std(mesh_k_num)
-    variance = np.var(mesh_k_num)
-    return mean, median, max, min, peak2peak, standard_deviation, variance
-
-def analysis_kp(splt_k, temp_inf: TmpInf) -> pd.DataFrame:
-    """
-    #分析2：特徴点座標のバラつき
-    :param splt_k:
-    :param temp_inf:
-    :return:
-    """
-    marker_k_np = [[np.int32(i), np.int32(kp.pt[0]), np.int32(kp.pt[1])] for i, keypoints in enumerate(splt_k)
-        for kp in keypoints]
-    df = pd.DataFrame(marker_k_np, columns=['mesh_id', 'x', 'y'])
-    print("Done make data")
-    print(df.head(5))
-    return df
 
 def combine_mesh(splt_k, splt_d, temp_inf):
     """
@@ -146,7 +110,7 @@ def combine_mesh(splt_k, splt_d, temp_inf):
 
         tmp = np.array(tmp).astype(np.int64)
         median_nearest = np.median(tmp[:, 1])
-        if median_nearest < mesh_k_num[temp_inf.get_meshid_vertex(self_id)]:
+        if median_nearest < self_k_num:
             #TODO マージ判定
             #近傍中の中央値よりも注目メッシュのキーポイント数が大きい場合は無視する
             continue
@@ -156,6 +120,7 @@ def combine_mesh(splt_k, splt_d, temp_inf):
         merge_id = tmp[-1][0][2]
         mesh_map[temp_inf.get_meshid_vertex(i)] = merge_id
         splt_k[merge_id].extend(kd[0])
+        mesh_k_num[temp_inf.get_meshid_vertex(merge_id)] = mesh_k_num[temp_inf.get_meshid_vertex(merge_id)] + self_k_num
         try:
             np.concatenate((splt_d[merge_id], kd[1]))
         except(IndexError, ValueError):
@@ -168,13 +133,26 @@ def combine_mesh(splt_k, splt_d, temp_inf):
 
     return splt_k, splt_d, mesh_k_num, mesh_map
 
+def combine_mesh_compact(splt_k, splt_d, temp_inf):
+    sk, sd, mesh_k_num, merged_map = combine_mesh(splt_k, splt_d, temp_inf)
+    m_sk = compact_merged_splt(sk)
+    m_sd = compact_merged_splt(sd)
+    return m_sk, m_sd, mesh_k_num, merged_map
 
-
+def compact_merged_splt(m_s):
+    return [x for x in m_s if x is not None]
 
 def affine_detect_into_mesh(detector, split_num, img1, mask=None, simu_param='default'):
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
     kp, desc = affine_detect(detector, img1, mask, pool=pool, simu_param=simu_param)
     return split_kd(kp, desc, split_num)
+
+def affine_load_into_mesh(template_fn, splt_num):
+    pikle_path = myfm.get_pikle_path(template_fn)
+    if not os.path.exists(pikle_path):
+        raise ValueError('Failed to load pikle:', pikle_path)
+    kp, des = load_pikle(pikle_path)
+    return split_kd(kp, des, splt_num)
 
 def match_with_cross(matcher, meshList_descQ, meshList_kpQ, descT, kpT):
     meshList_pQ = []
@@ -192,8 +170,45 @@ def match_with_cross(matcher, meshList_descQ, meshList_kpQ, descT, kpT):
 def count_keypoints(splt_kpQ):
     len_s_kp = 0
     for kps in splt_kpQ:
-        len_s_kp += len(kps)
+        if kps is not None:
+            len_s_kp += len(kps)
     return len_s_kp
+
+def merge_rule(id, mean, mesh_k_num, temp_inf):
+    """
+    #TODO
+    何かしらのマージルール
+    特徴点数とか，分布とか，特徴量とかでマージが必要なメッシュかをかをはんていする
+    :type mesh_k_num :np.ndarray
+    """
+
+    if mean > mesh_k_num[temp_inf.get_meshid_vertex(id)]:
+        pass
+
+def analysis_num(mesh_k_num):
+    #分析１：特徴点数のバラつき
+    mean = mesh_k_num.mean()
+    median = np.median(mesh_k_num)
+    max = np.amax(mesh_k_num)
+    min = np.amin(mesh_k_num)
+    peak2peak = np.ptp(mesh_k_num)
+    standard_deviation = np.std(mesh_k_num)
+    variance = np.var(mesh_k_num)
+    return mean, median, max, min, peak2peak, standard_deviation, variance
+
+def analysis_kp(splt_k, temp_inf: TmpInf) -> pd.DataFrame:
+    """
+    #分析2：特徴点座標のバラつき
+    :param splt_k:
+    :param temp_inf:
+    :return:
+    """
+    marker_k_np = [[np.int32(i), np.int32(kp.pt[0]), np.int32(kp.pt[1])] for i, keypoints in enumerate(splt_k)
+                   for kp in keypoints]
+    df = pd.DataFrame(marker_k_np, columns=['mesh_id', 'x', 'y'])
+    print("Done make data")
+    print(df.head(5))
+    return df
 
 def test_module():
     import os
@@ -250,10 +265,29 @@ if __name__ == '__main__':
     if detector is None:
         print('unknown feature:', feature_name)
         sys.exit(1)
-
-    splt_num = 64
     print('using', feature_name)
-    splt_kpQ, splt_descQ = affine_detect_into_mesh(detector, splt_num, imgQ, simu_param='default')
+
+    template_fn, ext = os.path.splitext(os.path.basename(fn1))
+    template_information = {"_fn":"tmp.png", "template_img":template_fn,
+                            "_cols":800, "_rows":600, "_scols":8, "_srows":8, "_nneighbor":4}
+    temp_inf = TmpInf(**template_information)
+    try:
+        splt_kpQ, splt_descQ = affine_load_into_mesh(template_fn, temp_inf.get_splitnum())
+    except ValueError as e:
+        print(e)
+        print('If you need to save {} to file as datavase. ¥n'
+              + ' Execute /Users/tiwasaki/PycharmProjects/makedb/make_split_combine_featureDB_from_templates.py')
+        splt_kpQ, splt_descQ = affine_detect_into_mesh(detector, temp_inf.get_splitnum(), imgQ, simu_param='default')
+
+    sk_num = count_keypoints(splt_kpQ)
+    m_skQ, m_sdQ, m_k_num, merged_map = combine_mesh(splt_kpQ, splt_descQ, temp_inf)
+    if not sk_num == count_keypoints(m_skQ) and not count_keypoints(m_skQ) == np.sum(m_k_num):
+        print('{0}, {1}, {2}'.format(sk_num, count_keypoints(m_skQ), np.sum(m_k_num)))
+        sys.exit(1)
+    m_skQ = compact_merged_splt(m_skQ)
+    m_sdQ = compact_merged_splt(m_sdQ)
+    list_merged_mesh_id = list(set(np.ravel(merged_map)))
+
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
     kpT, descT = affine_detect(detector, imgT, pool=pool, simu_param='test')
     print('imgQ - %d features, imgT - %d features' % (count_keypoints(splt_kpQ), len(kpT)))
@@ -261,34 +295,12 @@ if __name__ == '__main__':
     with Timer('matching'):
         mesh_pQ, mesh_pT, mesh_pairs = match_with_cross(matcher, splt_descQ, splt_kpQ, descT, kpT)
 
-    Hs = []
-    statuses = []
-    kp_pairs_long = []
-    Hs_stable = []
-    kp_pairs_long_stable = []
-    for pQ, pT, pairs in zip(mesh_pQ, mesh_pT, mesh_pairs):
-        pairs, H, status = calclate_Homography(pQ, pT, pairs)
-        Hs.append(H)
-        statuses.append(status)
-        if np.sum(status)/len(status) >= 0.4:
-            Hs_stable.append(H)
-        else:
-            Hs_stable.append(None)
-        for p in pairs:
-            kp_pairs_long.append(p)
-            if np.sum(status)/len(status) >= 0.4:
-                kp_pairs_long_stable.append(p)
+    Hs, statuses, pairs = calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs)
 
     vis = draw_matches_for_meshes(imgQ, imgT, Hs=Hs)
     cv2.imshow('view weak meshes', vis)
-    cv2.imwrite('qr1_meshes.png', vis)
+    cv2.imwrite('qrmarker_detection_merged.png', vis)
 
-    visS = draw_matches_for_meshes(imgQ, imgT, Hs=Hs_stable)
-    cv2.imshow('view stable meshes', visS)
-    cv2.imwrite('qr1_meshes_stable.png', visS)
-
-    viw = explore_match_for_meshes('affine find_obj', imgQ, imgT, kp_pairs_long_stable, Hs=Hs_stable)
-    cv2.imwrite('qr1_mesh_line.png', viw)
     cv2.waitKey()
     cv2.destroyAllWindows()
 

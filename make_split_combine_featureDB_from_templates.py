@@ -37,7 +37,7 @@ import pandas
 from commons import expt_modules as emod, my_file_path_manager as myfsys
 from commons.custom_find_obj import calclate_Homography
 from commons.custom_find_obj import init_feature
-from commons.my_common import Timer, get_pikle
+from commons.my_common import Timer
 from make_database import split_affinesim_combinable as slac
 from make_database import asift
 
@@ -102,6 +102,6 @@ if __name__ == "__main__":
         for p in kp:
             temp = (p.pt, p.size, p.angle, p.response, p.octave, p.class_id)
             index.append(temp)
-        pickle_path = get_pikle(path_dump_dir, fn=fn)
+        pickle_path = myfsys.get_pikle_path(fn)
         with open(pickle_path, mode='wb') as f:
             pickle.dump((index, des), f)
