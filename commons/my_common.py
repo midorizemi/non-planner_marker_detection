@@ -33,7 +33,7 @@ def debug(f, *args, **kwargs):
     return pdb.runcall(f, *args, **kwargs)
 
 def get_pikle(*args, **kwargs):
-    return os.path.join(kwargs['base_name'], args, kwargs['fn'] + 'pikle')
+    return os.path.join(kwargs.get('base_name'), args, kwargs.get('fn', 'example') + 'pikle')
 
 def load_pikle(fn):
     with open(fn, mode='rb') as f:

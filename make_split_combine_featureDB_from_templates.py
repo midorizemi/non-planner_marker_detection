@@ -63,7 +63,7 @@ if __name__ == "__main__":
     a = myfsys.make_list_template_filename()
     feature = 'sift'
     def mkdir_dump_dir(*args, **kwargs):
-        path = os.path.join(kwargs['base_dir'], args)
+        path = os.path.join(kwargs.get('base_dir'), args)
         if os.path.exists(path):
             print(path + 'is exist')
             return path, True
