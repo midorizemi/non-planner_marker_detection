@@ -8,6 +8,9 @@ if PY3:
 from contextlib import contextmanager
 from commons.common import clock
 from logging import getLogger
+import cv2
+import os
+import pickle
 
 logger = getLogger(__name__)
 
@@ -28,3 +31,15 @@ def debug(f, *args, **kwargs):
     from IPython.core.debugger import Pdb
     pdb = Pdb(color_scheme='Linux')
     return pdb.runcall(f, *args, **kwargs)
+
+def get_pikle(*args, **kwargs):
+    return os.path.join(kwargs['base_name'], args, kwargs['fn'] + 'pikle')
+
+def load_pikle(fn):
+    with open(fn, mode='rb') as f:
+        index, des = pickle.load(f)
+    kp = []
+    for p in index:
+        temp = cv2.KeyPoint(x=p[0][0], y=p[0][1], _size=p[1], _angle=p[2],
+                            _response=p[3], _octave=p[4], _class_id=p[5])
+        kp.append(temp)

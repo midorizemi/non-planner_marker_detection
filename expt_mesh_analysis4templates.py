@@ -72,22 +72,6 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     kw = {'fn1':fn1, 'fn2':fn2, 'feature':feature, 'template_information':template_information}
     print(kw)
     print(expt_name)
-    # imgQ = cv2.imread(fn1, 0)
-    # imgT = cv2.imread(fn2, 0)
-    # detector, matcher = init_feature(feature)
-    # if imgQ is None:
-    #     print('Failed to load fn1:', fn1)
-    #     sys.exit(1)
-    #
-    # if imgT is None:
-    #     print('Failed to load fn2:', fn2)
-    #     sys.exit(1)
-    #
-    # if detector is None:
-    #     print('unknown feature:', feature)
-    #     sys.exit(1)
-    #
-    # temp_inf = slac.TmpInf(**template_information)
     imgQ, imgT, detector, matcher, temp_inf = expt_setting(**kw)
 
     print('using', feature)
