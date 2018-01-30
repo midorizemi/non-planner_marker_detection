@@ -80,7 +80,7 @@ def calc_affine_params(simu: str ='default') -> list:
     if simu == 'degrees-full':
         """一周する"""
         for t in np.reciprocal(np.cos(np.radians(np.arange(10, 90, 10)))):
-            for phi in np.arange(0, 360, 20):
+            for phi in np.arange(0, 360, 10):
                 params.append((t, phi))
 
     if simu == 'test2':
