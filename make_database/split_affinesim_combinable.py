@@ -259,12 +259,11 @@ def explore_meshes(imgT, temp_inf, Hs=None, list_merged_mesh_id=None, mesh_map=N
         list_ms = get_id_list(mid, temp_inf, mesh_map)
         rectangles_vertexes = temp_inf.get_mesh_recanglarvertex_list(list_ms)
 
-        def f(vertexes):
+        for vertexes in rectangles_vertexes:
             if H is not None:
                 corners = np.int32(cv2.perspectiveTransform(vertexes.reshape(1, -1, 2), H).reshape(-1, 2) + (wT, 0))
                 meshes.append(corners)
 
-        map(f, rectangles_vertexes)
     return meshes
 
 
