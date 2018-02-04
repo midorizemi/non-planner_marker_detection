@@ -16,7 +16,7 @@ from __future__ import print_function
 # built-in modules
 from multiprocessing.pool import ThreadPool
 
-#解析
+# 解析
 import pandas as pd
 
 import cv2
@@ -29,15 +29,14 @@ from commons.my_common import set_trace, debug, load_pikle
 from commons.find_obj import init_feature
 from commons.affine_base import affine_detect
 from commons.template_info import TemplateInfo as TmpInf
-from commons.custom_find_obj import explore_match_for_meshes, filter_matches_wcross as c_filter
-from commons.custom_find_obj import calclate_Homography4splitmesh, draw_matches_for_meshes
-from make_database import make_splitmap as mks
+from commons.custom_find_obj import filter_matches_wcross as c_filter
+from commons.custom_find_obj import calclate_Homography4splitmesh
 from commons import my_file_path_manager as myfm
-import make_database.split_affinesim as splaf
+
 
 def split_kd(keypoints, descrs, splt_num):
     tmp = TmpInf()
-    split_tmp_img = mks.make_splitmap(tmp)
+    split_tmp_img = tmp.make_splitmap()
     assert isinstance(split_tmp_img, np.ndarray)
     global descrs_list
     if isinstance(descrs, np.ndarray):
@@ -69,6 +68,7 @@ def split_kd(keypoints, descrs, splt_num):
 
     return splits_k, splits_d
 
+
 def combine_mesh(splt_k, splt_d, temp_inf):
     """
     :type temp_inf: TmpInf
@@ -87,12 +87,12 @@ def combine_mesh(splt_k, splt_d, temp_inf):
         :return:
         """
         meshid_list = temp_inf.get_meshidlist_nneighbor(i)
-        self_id = mesh_map[temp_inf.get_meshid_vertex(i)]
-        self_k_num = mesh_k_num[temp_inf.get_meshid_vertex(self_id)]
+        self_id = mesh_map[temp_inf.get_meshid_index(i)]
+        self_k_num = mesh_k_num[temp_inf.get_meshid_index(self_id)]
         if not self_id == i or len(np.where(mesh_map == i)[0]) > 1 or self_k_num == 0:
             """すでにマージされている"""
             continue
-        #最大値のindexを求める．
+        # 最大値のindexを求める．
         dtype = [('muki', int), ('keypoint_num', int), ('merge_id', int)]
         # tmp = np.array([list(len(meshid_list)-index, mesh_k_num[temp_inf.get_meshid_vertex(id)], id )
         #                for index, id in enumerate(meshid_list) if id is not None]).astype(np.int64)
@@ -100,38 +100,39 @@ def combine_mesh(splt_k, splt_d, temp_inf):
         # for index, id in enumerate(meshid_list):
         #     if id is not None:
         #         tmp.extend([len(meshid_list) - index, mesh_k_num[temp_inf.get_meshid_vertex(id)], id])
-        #tmp = np.array(tmp)reshape(int(len(tmp)/3, 3).astype(np.int64)
+        # tmp = np.array(tmp)reshape(int(len(tmp)/3, 3).astype(np.int64)
         try:
             for index, id in enumerate(meshid_list):
                 if id is not None:
-                    tmp.append([len(meshid_list) - index, mesh_k_num[temp_inf.get_meshid_vertex(id)], id])
+                    tmp.append([len(meshid_list) - index, mesh_k_num[temp_inf.get_meshid_index(id)], id])
         except(IndexError):
             set_trace()
 
         tmp = np.array(tmp).astype(np.int64)
         median_nearest = np.median(tmp[:, 1])
         if median_nearest < self_k_num:
-            #TODO マージ判定
-            #近傍中の中央値よりも注目メッシュのキーポイント数が大きい場合は無視する
+            # TODO マージ判定
+            # 近傍中の中央値よりも注目メッシュのキーポイント数が大きい場合は無視する
             continue
         tmp.dtype = dtype
-        tmp.sort(order=['keypoint_num', 'muki']) #左回りでかつキーポイント数が最大
-        #idにself_idをマージする, 昇順なので末端
+        tmp.sort(order=['keypoint_num', 'muki'])  # 左回りでかつキーポイント数が最大
+        # idにself_idをマージする, 昇順なので末端
         merge_id = tmp[-1][0][2]
-        mesh_map[temp_inf.get_meshid_vertex(i)] = merge_id
+        mesh_map[temp_inf.get_meshid_index(i)] = merge_id
         splt_k[merge_id].extend(kd[0])
-        mesh_k_num[temp_inf.get_meshid_vertex(merge_id)] = mesh_k_num[temp_inf.get_meshid_vertex(merge_id)] + self_k_num
+        mesh_k_num[temp_inf.get_meshid_index(merge_id)] = mesh_k_num[temp_inf.get_meshid_index(merge_id)] + self_k_num
         try:
             np.concatenate((splt_d[merge_id], kd[1]))
         except(IndexError, ValueError):
             set_trace()
 
-        #マージされて要らなくなったメッシュは消す
+        # マージされて要らなくなったメッシュは消す
         splt_k[i] = None
         splt_d[i] = None
-        mesh_k_num[temp_inf.get_meshid_vertex(self_id)] = 0
+        mesh_k_num[temp_inf.get_meshid_index(self_id)] = 0
 
     return splt_k, splt_d, mesh_k_num, mesh_map
+
 
 def combine_mesh_compact(splt_k, splt_d, temp_inf):
     sk, sd, mesh_k_num, merged_map = combine_mesh(splt_k, splt_d, temp_inf)
@@ -139,20 +140,25 @@ def combine_mesh_compact(splt_k, splt_d, temp_inf):
     m_sd = compact_merged_splt(sd)
     return m_sk, m_sd, mesh_k_num, merged_map
 
+
 def compact_merged_splt(m_s):
     return [x for x in m_s if x is not None]
+
 
 def affine_detect_into_mesh(detector, split_num, img1, mask=None, simu_param='default'):
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
     kp, desc = affine_detect(detector, img1, mask, pool=pool, simu_param=simu_param)
     return split_kd(kp, desc, split_num)
 
+
 def affine_load_into_mesh(template_fn, splt_num):
     pikle_path = myfm.get_pikle_path(template_fn)
     if not os.path.exists(pikle_path):
+        print('Not found {}'.format(pikle_path))
         raise ValueError('Failed to load pikle:', pikle_path)
     kp, des = load_pikle(pikle_path)
     return split_kd(kp, des, splt_num)
+
 
 def match_with_cross(matcher, meshList_descQ, meshList_kpQ, descT, kpT):
     meshList_pQ = []
@@ -167,12 +173,14 @@ def match_with_cross(matcher, meshList_descQ, meshList_kpQ, descT, kpT):
         meshList_pairs.append(pairs)
     return meshList_pQ, meshList_pT, meshList_pairs
 
+
 def count_keypoints(splt_kpQ):
     len_s_kp = 0
     for kps in splt_kpQ:
         if kps is not None:
             len_s_kp += len(kps)
     return len_s_kp
+
 
 def merge_rule(id, mean, mesh_k_num, temp_inf):
     """
@@ -182,11 +190,12 @@ def merge_rule(id, mean, mesh_k_num, temp_inf):
     :type mesh_k_num :np.ndarray
     """
 
-    if mean > mesh_k_num[temp_inf.get_meshid_vertex(id)]:
+    if mean > mesh_k_num[temp_inf.get_meshid_index(id)]:
         pass
 
+
 def analysis_num(mesh_k_num):
-    #分析１：特徴点数のバラつき
+    # 分析１：特徴点数のバラつき
     mean = mesh_k_num.mean()
     median = np.median(mesh_k_num)
     max = np.amax(mesh_k_num)
@@ -195,6 +204,7 @@ def analysis_num(mesh_k_num):
     standard_deviation = np.std(mesh_k_num)
     variance = np.var(mesh_k_num)
     return mean, median, max, min, peak2peak, standard_deviation, variance
+
 
 def analysis_kp(splt_k, temp_inf: TmpInf) -> pd.DataFrame:
     """
@@ -209,6 +219,7 @@ def analysis_kp(splt_k, temp_inf: TmpInf) -> pd.DataFrame:
     print("Done make data")
     print(df.head(5))
     return df
+
 
 def test_module():
     import os
@@ -231,14 +242,51 @@ def test_module():
         print('unknown feature:', feature_name)
         sys.exit(1)
 
-    template_information = {"_fn":"tmp.png", "_cols":800, "_rows":600, "_scols":8, "_srows":8, "_nneighbor":4}
+    template_information = {"_fn": "tmp.png", "_cols": 800, "_rows": 600, "_scols": 8, "_srows": 8, "_nneighbor": 4}
     temp_inf = TmpInf(**template_information)
     return temp_inf, imgQ, imgT, detector, matcher
+
+def get_id_list(_id, tmp_inf, merged_mesh_map: np.ndarray):
+    flag = np.where(merged_mesh_map == _id, True, False)
+    map = tmp_inf.get_mesh_map()
+    return map[flag].tolist()
+
+def explore_meshes(imgT, temp_inf, Hs=None, list_merged_mesh_id=None, mesh_map=None):
+    hT, wT = imgT.shape[:2]
+
+    meshes = []
+    for H, mid in zip(Hs, list_merged_mesh_id):
+        list_ms = get_id_list(mid, temp_inf, mesh_map)
+        rectangles_vertexes = temp_inf.get_mesh_recanglarvertex_list(list_ms)
+
+        def f(vertexes):
+            if H is not None:
+                corners = np.int32(cv2.perspectiveTransform(vertexes.reshape(1, -1, 2), H).reshape(-1, 2) + (wT, 0))
+                meshes.append(corners)
+
+        map(f, rectangles_vertexes)
+    return meshes
+
+
+def draw_matches_for_meshes(imgT, imgQ, temp_inf, Hs=None, vis=None, list_merged_mesh_id=None, merged_map=None):
+    h1, w1 = imgT.shape[:2]
+    h2, w2 = imgQ.shape[:2]
+    if vis is None:
+        vis = np.zeros((max(h1, h2), w1 + w2), np.uint8)
+        vis[:h1, :w1] = imgT
+        vis[:h2, w1:w1 + w2] = imgQ
+        vis = cv2.cvtColor(vis, cv2.COLOR_GRAY2BGR)
+    meshes = explore_meshes(imgT,temp_inf, Hs, list_merged_mesh_id, merged_map)
+    for mesh_corners in meshes:
+        cv2.polylines(vis, [mesh_corners], True, (255, 255, 0), thickness=3, lineType=cv2.LINE_AA)
+
+    return vis
 
 if __name__ == '__main__':
     print(__doc__)
 
     import sys, getopt
+
     opts, args = getopt.getopt(sys.argv[1:], '', ['feature='])
     opts = dict(opts)
     feature_name = opts.get('--feature', 'sift')
@@ -246,6 +294,7 @@ if __name__ == '__main__':
         fn1, fn2 = args
     except:
         import os
+
         dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
         fn1 = os.path.abspath(os.path.join(dir, 'data/templates/qrmarker.png'))
         fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
@@ -268,8 +317,8 @@ if __name__ == '__main__':
     print('using', feature_name)
 
     template_fn, ext = os.path.splitext(os.path.basename(fn1))
-    template_information = {"_fn":"tmp.png", "template_img":template_fn,
-                            "_cols":800, "_rows":600, "_scols":8, "_srows":8, "_nneighbor":4}
+    template_information = {"_fn": "tmp.png", "template_img": template_fn,
+                            "_cols": 800, "_rows": 600, "_scols": 8, "_srows": 8, "_nneighbor": 4}
     temp_inf = TmpInf(**template_information)
     try:
         splt_kpQ, splt_descQ = affine_load_into_mesh(template_fn, temp_inf.get_splitnum())
@@ -280,7 +329,7 @@ if __name__ == '__main__':
         splt_kpQ, splt_descQ = affine_detect_into_mesh(detector, temp_inf.get_splitnum(), imgQ, simu_param='default')
 
     sk_num = count_keypoints(splt_kpQ)
-    m_skQ, m_sdQ, m_k_num, merged_map = combine_mesh(splt_kpQ, splt_descQ, temp_inf)
+    m_skQ, m_sdQ, m_k_num, merged_map = combine_mesh_compact(splt_kpQ, splt_descQ, temp_inf)
     if not sk_num == count_keypoints(m_skQ) and not count_keypoints(m_skQ) == np.sum(m_k_num):
         print('{0}, {1}, {2}'.format(sk_num, count_keypoints(m_skQ), np.sum(m_k_num)))
         sys.exit(1)
@@ -293,14 +342,14 @@ if __name__ == '__main__':
     print('imgQ - %d features, imgT - %d features' % (count_keypoints(splt_kpQ), len(kpT)))
 
     with Timer('matching'):
-        mesh_pQ, mesh_pT, mesh_pairs = match_with_cross(matcher, splt_descQ, splt_kpQ, descT, kpT)
+        mesh_pQ, mesh_pT, mesh_pairs = match_with_cross(matcher, m_sdQ, m_skQ, descT, kpT)
 
+    # Hs, statuses, pairs = calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs)
     Hs, statuses, pairs = calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs)
 
-    vis = draw_matches_for_meshes(imgQ, imgT, Hs=Hs)
+    vis = draw_matches_for_meshes(imgQ, imgT, temp_inf=temp_inf, Hs=Hs, list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
     cv2.imshow('view weak meshes', vis)
     cv2.imwrite('qrmarker_detection_merged.png', vis)
 
     cv2.waitKey()
     cv2.destroyAllWindows()
-

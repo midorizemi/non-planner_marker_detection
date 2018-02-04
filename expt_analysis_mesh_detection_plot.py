@@ -2,14 +2,12 @@ import numpy as np
 import pandas as pd
 import commons.my_file_path_manager as myfs
 
-from typing import List
-def a_params()-> List[List]:
+from typing import Tuple
+def get_cgs_camera_positions()-> Tuple(np.ndarray, np.array):
     """一周する"""
-    params = [[1, 0]]
-    for t in np.sin(np.radians(np.arange(10, 90, 10))):
-        for phi in np.radians(np.arange(0, 360, 10)):
-            params.append([phi, t])
-    return params
+    t = np.sin(np.radians(np.arange(10, 90, 10)))
+    phi = np.radians(np.arange(0, 360, 10))
+    return phi, t
 
 def plot_mesh(mesh, key, plot_title, color, *args, **kwargs):
     import matplotlib as mtpl
@@ -80,22 +78,29 @@ def plot_each_cam_position(expt_dir, fn):
         plot_mesh(a[:, :, 0], key, "Refine points", 'Blues', name, expt_dir=expt_dir, name=name)
 
         plot_mesh(a[:, :, 1], key, "Matched points", 'Reds', name, expt_dir=expt_dir, name=name)
-
-        ratio = a[:, :, 0] / a[:, :, 1]
+        flag = a[:, :, 1]==0
+        s = a[:, :, 1]
+        s[flag] = 1
+        ratio = a[:, :, 0] / s
         plot_mesh(ratio, key, "Ratio of refine and matched points \n", 'Purples', name, expt_dir=expt_dir, name=name)
 
-def plot_passage(df, plot_title):
+def plot_passage(df, plot_title, path, key, *kwargs):
+    import os
     import matplotlib as mtpl
     mtpl.use('pdf')
     from matplotlib.backends.backend_pdf import PdfPages
     import matplotlib.pylab as plt
     plt.switch_backend('pdf')
     import seaborn as sns
-    import os
     print('plotting {}'.format(plot_title))
-    import os
-    plt.figure(figsize=(16,12))
-    sns.set("paper", "whitegrid", "dark", font_scale=1.5)
+    phi, t = get_cgs_camera_positions()
+    x, y = np.meshgrid(phi, t)
+    columns = ["longitude", "latitude", "sum_refine", "sum_match", "mean_refine", "mean_match", "mean_ratio", "mesh_num"]
+    def plot_data(title, data):
+        plt.figure(figsize=(16,12))
+        sns.set("paper", "whitegrid", "dark", font_scale=1.5)
+        pp = PdfPages(os.path.join(path, plot_title + key + kwargs.get('name', '') + '.pdf'))
+
 
 def plot_detection_passage(expt_dir, fn):
     import os

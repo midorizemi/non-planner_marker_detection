@@ -13,23 +13,47 @@ class TemplateInfo:
     def get_splitnum(self):
         return self.scols * self.srows
 
-    ## coluculate mash top left vertex pt
-    def calculate_mesh_tlvertex(self, id):
+    def make_splitmap(self):
+        import numpy as np
+        img = np.zeros((self.rows, self.cols, 1), np.uint8)
+        for i in range(self.get_splitnum()):
+            y, x = self.calculate_mesh_topleftvertex(i)
+            mesh = np.tile(np.uint8([i]), (self.offset_r, self.offset_c, 1))
+            img[y:y+self.offset_r, x:x+self.offset_c] = mesh
+
+        return img
+
+    def calculate_mesh_topleftvertex(self, id):
+        ## coluculate mash top left vertex pt = [Y-axis, X-axis]
         div_r = id // self.scols
         mod_c = id % self.scols
 
-        return self.offset_c * mod_c, self.offset_r * div_r
+        return  self.offset_r * div_r, self.offset_c * mod_c
 
     def calculate_mesh_corners_index(self, id):
         return (id + 0, id + 1, id + self.scols, id + self.scols + 1)
 
     def calculate_mesh_corners(self, id):
+        #メッシュ番号を入力メッシュを構成する頂点を返す
         import numpy as np
-        i, j = self.calculate_mesh_tlvertex(id)
-        return np.float32(
-            [[i, j], [i + self.offset_c, j], [i + self.offset_c, j + self.offset_r], [i, j + self.offset_r]])
+        i, j = self.calculate_mesh_topleftvertex(id)
+        def overw(val):
+            if val > self.cols:
+                return self.cols -1
+            elif val < 0:
+                return 0
+            else: return val
+        def overh(val):
+            if val > self.rows:
+                return self.rows -1
+            elif val < 0:
+                return 0
+            else: return val
+        return np.float32([[i, j], [i, overw(j + self.offset_c)],
+                           [overh(i + self.offset_r), overw(j + self.offset_c)], [overh(i + self.offset_r), j]])
 
-    def get_meshid_vertex(self, id):
+    def get_meshid_index(self, id):
+        #行列のインデックスを返す
         div_r = id // self.scols
         mod_c = id % self.scols
         return div_r, mod_c
@@ -92,6 +116,15 @@ class TemplateInfo:
     def get_nneighbor(self, id, mesh_map=None):
         pass
 
+    def get_mesh_recanglarvertex_list(self, list_id):
+        list_mesh_vertex = []
+        for id in list_id:
+            list_mesh_vertex.append(self.calculate_mesh_corners(id))
+        return list_mesh_vertex
 
-    def get_mesh_corners(self, ):
+
+    def get_mesh_corners(self, list_merged_mesh_id, merged_map):
+        merged_map_lists = []
+        for id in list_merged_mesh_id:
+            merged_map
         pass
