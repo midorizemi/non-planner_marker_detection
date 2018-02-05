@@ -25,6 +25,7 @@ import os
 
 # local modules
 from commons.common import Timer
+from commons.common import anorm
 from commons.my_common import set_trace, debug, load_pikle
 from commons.find_obj import init_feature
 from commons.affine_base import affine_detect
@@ -281,6 +282,72 @@ def draw_matches_for_meshes(imgT, imgQ, temp_inf, Hs=None, vis=None, list_merged
 
     return vis
 
+def explore_match_for_meshes(win, imgT, imgQ, kp_pairs, temp_inf=None, status=None, Hs=None,
+                             list_merged_mesh_id=None, merged_map=None):
+    h1, w1 = imgT.shape[:2]
+    h2, w2 = imgQ.shape[:2]
+    vis = np.zeros((max(h1, h2), w1 + w2), np.uint8)
+    vis[:h1, :w1] = imgT
+    vis[:h2, w1:w1 + w2] = imgQ
+    vis = cv2.cvtColor(vis, cv2.COLOR_GRAY2BGR)
+
+    vis = draw_matches_for_meshes(imgT, imgQ, temp_inf,  Hs, vis,
+                                  list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
+    vis0 = vis.copy()
+    p1, p2 = [], []  # python 2 / python 3 change of zip unpacking
+    for kpp in kp_pairs:
+        p1.append(np.int32(kpp[0].pt))
+        p2.append(np.int32(np.array(kpp[1].pt) + [w1, 0]))
+    if status is None:
+        status = np.ones(len(kp_pairs), np.bool_)
+
+    green = (0, 255, 0)
+    red = (0, 0, 255)
+    for (x1, y1), (x2, y2), inlier in zip(p1, p2, status):
+        if inlier:
+            col = green
+            cv2.circle(vis, (x1, y1), 2, col, -1)
+            cv2.circle(vis, (x2, y2), 2, col, -1)
+        else:
+            col = red
+            r = 2
+            thickness = 3
+            cv2.line(vis, (x1 - r, y1 - r), (x1 + r, y1 + r), col, thickness)
+            cv2.line(vis, (x1 - r, y1 + r), (x1 + r, y1 - r), col, thickness)
+            cv2.line(vis, (x2 - r, y2 - r), (x2 + r, y2 + r), col, thickness)
+            cv2.line(vis, (x2 - r, y2 + r), (x2 + r, y2 - r), col, thickness)
+    for (x1, y1), (x2, y2), inlier in zip(p1, p2, status):
+        if inlier:
+            cv2.line(vis, (x1, y1), (x2, y2), green)
+
+    cv2.imshow(win, vis)
+
+    green = (0, 255, 0)
+    red = (0, 0, 255)
+    kp_color = (51, 103, 236)
+    def onmouse(event, x, y, flags, param):
+        cur_vis = vis
+        if flags & cv2.EVENT_FLAG_LBUTTON:
+            cur_vis = vis0.copy()
+            r = 8
+            m = (anorm(np.array(p1) - (x, y)) < r) | (anorm(np.array(p2) - (x, y)) < r)
+            idxs = np.where(m)[0]
+            kp1s, kp2s = [], []
+            for i in idxs:
+                (x1, y1), (x2, y2) = p1[i], p2[i]
+                col = (red, green)[status[i]]
+                cv2.line(cur_vis, (x1, y1), (x2, y2), col)
+                kp1, kp2 = kp_pairs[i]
+                kp1s.append(kp1)
+                kp2s.append(kp2)
+            cur_vis = cv2.drawKeypoints(cur_vis, kp1s, None, flags=4, color=kp_color)
+            cur_vis[:, w1:] = cv2.drawKeypoints(cur_vis[:, w1:], kp2s, None, flags=4, color=kp_color)
+
+        cv2.imshow(win, cur_vis)
+
+    cv2.setMouseCallback(win, onmouse)
+    return vis
+
 if __name__ == '__main__':
     print(__doc__)
 
@@ -297,6 +364,7 @@ if __name__ == '__main__':
         dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
         fn1 = os.path.abspath(os.path.join(dir, 'data/templates/qrmarker.png'))
         fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
+        # fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/011_080-100.png'))
 
     imgQ = cv2.imread(fn1, 0)
     imgT = cv2.imread(fn2, 0)
@@ -305,27 +373,32 @@ if __name__ == '__main__':
     if imgQ is None:
         print('Failed to load fn1:', fn1)
         sys.exit(1)
-
+    print("Using Query: {}".format(fn1))
     if imgT is None:
         print('Failed to load fn2:', fn2)
         sys.exit(1)
-
+    print("Using Training: {}".format(fn2))
     if detector is None:
         print('unknown feature:', feature_name)
         sys.exit(1)
-    print('using', feature_name)
+    print('Using :', feature_name)
 
     template_fn, ext = os.path.splitext(os.path.basename(fn1))
     template_information = {"_fn": "tmp.png", "template_img": template_fn,
                             "_cols": 800, "_rows": 600, "_scols": 8, "_srows": 8, "_nneighbor": 4}
     temp_inf = TmpInf(**template_information)
     try:
-        splt_kpQ, splt_descQ = affine_load_into_mesh(template_fn, temp_inf.get_splitnum())
+        with Timer('Lording pickle'):
+            splt_kpQ, splt_descQ = affine_load_into_mesh(template_fn, temp_inf.get_splitnum())
     except ValueError as e:
         print(e)
         print('If you need to save {} to file as datavase. ¥n'
               + ' Execute /Users/tiwasaki/PycharmProjects/makedb/make_split_combine_featureDB_from_templates.py')
-        splt_kpQ, splt_descQ = affine_detect_into_mesh(detector, temp_inf.get_splitnum(), imgQ, simu_param='default')
+        with Timer('Detection and dividing'):
+            splt_kpQ, splt_descQ = affine_detect_into_mesh(detector, temp_inf.get_splitnum(),
+                                                           imgQ, simu_param='default')
+
+    #TODO
 
     sk_num = count_keypoints(splt_kpQ)
     m_skQ, m_sdQ, m_k_num, merged_map = combine_mesh_compact(splt_kpQ, splt_descQ, temp_inf)
@@ -337,18 +410,26 @@ if __name__ == '__main__':
     list_merged_mesh_id = list(set(np.ravel(merged_map)))
 
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
-    kpT, descT = affine_detect(detector, imgT, pool=pool, simu_param='test')
+    with Timer('Detection'):
+        kpT, descT = affine_detect(detector, imgT, pool=pool, simu_param='test')
     print('imgQ - %d features, imgT - %d features' % (count_keypoints(splt_kpQ), len(kpT)))
 
     with Timer('matching'):
         mesh_pQ, mesh_pT, mesh_pairs = match_with_cross(matcher, m_sdQ, m_skQ, descT, kpT)
 
     # Hs, statuses, pairs = calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs)
-    Hs, statuses, pairs = calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs)
+    with Timer('estimation'):
+        Hs, statuses, pairs = calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs)
 
     vis = draw_matches_for_meshes(imgQ, imgT, temp_inf=temp_inf, Hs=Hs, list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
     cv2.imshow('view weak meshes', vis)
     cv2.imwrite('qrmarker_detection_merged.png', vis)
+    cv2.waitKey()
 
+    # viw = explore_match_for_meshes('affine find_obj', imgQ, imgT, pairs,
+    #                                temp_inf=temp_inf, Hs=Hs,
+    #                                list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
+    #
+    # cv2.imwrite('qr1_mesh_line.png', viw)
     cv2.waitKey()
     cv2.destroyAllWindows()

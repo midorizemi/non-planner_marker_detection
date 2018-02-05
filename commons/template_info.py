@@ -14,6 +14,7 @@ class TemplateInfo:
         return self.scols * self.srows
 
     def make_splitmap(self):
+        import cv2
         import numpy as np
         img = np.zeros((self.rows, self.cols, 1), np.uint8)
         for i in range(self.get_splitnum()):
@@ -28,7 +29,7 @@ class TemplateInfo:
         div_r = id // self.scols
         mod_c = id % self.scols
 
-        return  self.offset_r * div_r, self.offset_c * mod_c
+        return self.offset_r * div_r, self.offset_c * mod_c
 
     def calculate_mesh_corners_index(self, id):
         return (id + 0, id + 1, id + self.scols, id + self.scols + 1)
@@ -36,7 +37,7 @@ class TemplateInfo:
     def calculate_mesh_corners(self, id):
         #メッシュ番号を入力メッシュを構成する頂点を返す
         import numpy as np
-        i, j = self.calculate_mesh_topleftvertex(id)
+        y, x = self.calculate_mesh_topleftvertex(id)
         def overw(val):
             if val > self.cols:
                 return self.cols -1
@@ -49,8 +50,8 @@ class TemplateInfo:
             elif val < 0:
                 return 0
             else: return val
-        return np.float32([[i, j], [i, overw(j + self.offset_c)],
-                           [overh(i + self.offset_r), overw(j + self.offset_c)], [overh(i + self.offset_r), j]])
+        return np.float32([[x, y], [overw(x + self.offset_c), y],
+                           [overw(x + self.offset_c), overh(y + self.offset_r)], [x, overh(y + self.offset_r)]])
 
     def get_meshid_index(self, id):
         #行列のインデックスを返す
@@ -123,8 +124,8 @@ class TemplateInfo:
         return list_mesh_vertex
 
 
-    def get_mesh_corners(self, list_merged_mesh_id, merged_map):
-        merged_map_lists = []
-        for id in list_merged_mesh_id:
-            merged_map
-        pass
+    # def get_mesh_corners(self, list_merged_mesh_id, merged_map):
+    #     merged_map_lists = []
+    #     for id in list_merged_mesh_id:
+    #         merged_map
+    #     pass
