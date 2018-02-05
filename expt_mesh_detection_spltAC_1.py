@@ -198,8 +198,8 @@ if __name__ == '__main__':
     keyargs = {'prefix_shape': prefix, 'template_fn': template_fn}
     testset_full_path = myfsys.get_dir_full_path_testset('cgs', **keyargs)
     testset_name = os.path.basename(testset_full_path)
-    logger.debug('testset_name is {}'.format(testset_name))
-    logger.info('Test Set:{}'.format(testset_name))
+    # logger.debug('testset_name is {}'.format(testset_name))
+    # logger.info('Test Set:{}'.format(testset_name))
     testcase_fns = os.listdir(testset_full_path)
     testcase_fns.sort()
     logger.debug(testcase_fns)
@@ -237,10 +237,10 @@ if __name__ == '__main__':
         def f(*pQpTp):
             inlier_pairs, H, status = calclate_Homography(pQpTp[0], pQpTp[1], pQpTp[2])
             Hs.append(H)
-            statuses.extend(status)
             pairs.extend(inlier_pairs)
             if status is None:
                 status = []
+            statuses.extend(status)
             return [len(inlier_pairs), len(status), len(pQpTp[2])]
 
         with Timer('estimation'):
