@@ -343,9 +343,9 @@ def explore_match_for_meshes(win, imgT, imgQ, kp_pairs, temp_inf=None, status=No
             cur_vis = cv2.drawKeypoints(cur_vis, kp1s, None, flags=4, color=kp_color)
             cur_vis[:, w1:] = cv2.drawKeypoints(cur_vis[:, w1:], kp2s, None, flags=4, color=kp_color)
 
-        cv2.imshow(win, cur_vis)
+        # cv2.imshow(win, cur_vis)
 
-    cv2.setMouseCallback(win, onmouse)
+    # cv2.setMouseCallback(win, onmouse)
     return vis
 
 if __name__ == '__main__':
