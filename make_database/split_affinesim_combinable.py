@@ -320,7 +320,7 @@ def explore_match_for_meshes(win, imgT, imgQ, kp_pairs, temp_inf=None, status=No
         if inlier:
             cv2.line(vis, (x1, y1), (x2, y2), green)
 
-    cv2.imshow(win, vis)
+    # cv2.imshow(win, vis)
 
     green = (0, 255, 0)
     red = (0, 0, 255)
