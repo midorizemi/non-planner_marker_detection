@@ -198,11 +198,11 @@ if __name__ == '__main__':
     keyargs = {'prefix_shape': prefix, 'template_fn': template_fn}
     testset_full_path = myfsys.get_dir_full_path_testset('cgs', **keyargs)
     testset_name = os.path.basename(testset_full_path)
-    # logger.debug('testset_name is {}'.format(testset_name))
-    # logger.info('Test Set:{}'.format(testset_name))
+    logger.debug('testset_name is {}'.format(testset_name))
+    logger.info('Test Set:{}'.format(testset_name))
     testcase_fns = os.listdir(testset_full_path)
     testcase_fns.sort()
-    logger.debug(testcase_fns)
+    # logger.debug(testcase_fns)
 
 
     output_dir = myfsys.setup_output_directory(expt_name, testset_name, 'outputs', prefix + template_fn)
