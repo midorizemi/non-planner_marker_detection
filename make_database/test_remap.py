@@ -35,7 +35,7 @@ def update():
                 map_y.itemset((j,i),rows-j)
     ind = ind+1
 
-img = cv2.imread('/home/tiwasaki/PycharmProjects/makeDB/inputs/templates/mesh_label.png')
+img = cv2.imread('/home/tiwasaki/PycharmProjects/makedb/inputs/templates/mesh_label.png')
 ind = 0
 map_x = np.zeros(img.shape[:2], np.float32)
 map_y = np.zeros(img.shape[:2], np.float32)
