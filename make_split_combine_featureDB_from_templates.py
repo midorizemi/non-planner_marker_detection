@@ -68,7 +68,7 @@ if __name__ == "__main__":
             print(path + 'is exist')
             return path, True
         os.makedirs(path, exist_ok=True)
-        print('make dir')
+        print('make dir_path_full')
         return path, False
 
     for template_fn in a:

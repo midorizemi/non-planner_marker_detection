@@ -363,8 +363,8 @@ if __name__ == '__main__':
 
         dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
         fn1 = os.path.abspath(os.path.join(dir, 'data/templates/menko.png'))
-        # fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
-        # fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/011_080-100.png'))
+        # fn2 = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
+        # fn2 = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/unittest/011_080-100.png'))
         fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/219_020-020.png'))
 
     imgQ = cv2.imread(fn1, 0)

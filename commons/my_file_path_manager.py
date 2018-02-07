@@ -106,7 +106,7 @@ def setup_output_directory(base_name, *dirs):
     if os.path.exists(path):
         return path
     os.makedirs(path, exist_ok=True)
-    logger.info('make dir in ' + path)
+    logger.info('make dir_path_full in ' + path)
     return path
 
 def get_dir_full_path_testset(*option_dirs, prefix_shape, template_fn):

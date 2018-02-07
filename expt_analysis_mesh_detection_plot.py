@@ -19,7 +19,7 @@ def plot_mesh(mesh, key, plot_title, color, *args, **kwargs):
     import os
 
     print('plotting {0} - {1}'.format(key, plot_title))
-    path = myfs.setup_output_directory(kwargs.get('expt_dir', ''), kwargs.get('dir', ''), *args)
+    path = myfs.setup_output_directory(kwargs.get('expt_dir', ''), kwargs.get('dir_path_full', ''), *args)
     plt.figure(figsize=(16,12))
     sns.set("paper", "whitegrid", "dark", font_scale=1.5)
     fmt = 'f' if mesh.dtype == np.float64 else 'd'

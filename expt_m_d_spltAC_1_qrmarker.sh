@@ -33,16 +33,22 @@ ext=".png"
 for marker in ${array[@]}
 do
     template_full_path=$TEMPLATE_DIR"/"$marker$ext
-    echo $template_full_path
+    echo "テンプレート>>"$template_full_path
     for prf in ${prefix[@]}
     do
         testset=${INPUTS_DIR}"/"${data_flag}"/"${prf}${marker}
         declare -a inputs=(`find ${testset} -type f`)
         for input_file in ${inputs[@]}
         do
-            echo $input_file
+            echo "テスト画像>>"$input_file
 
-            #python expt_hoge.py $template_full_path $input_file $prf $testset
+            #op=$(python expt_split_affinesim.py "${template_full_path} ${input_file} ${prf} ${testset} --feature sift" | tail -n 1 >&1)
+            #exec python "expt_split_affinesim.py" "${template_full_path}" $"{input_file}" "${prf}" "${testset}" "--feature sift"
+            python expt_split_affinesim.py --feature=sift $template_full_path $input_file $prf $testset
+            #echo "result>>> "$op
+            break
         done
+        break
     done
+    break
 done

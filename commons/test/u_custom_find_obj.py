@@ -32,7 +32,7 @@ class TestClass(TestCase):
             dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, os.pardir))
             fn1 = os.path.abspath(os.path.join(dir, 'data/templates/qrmarker.png'))
             fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
-            #fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_0.000000_0.000000.png'))
+            #fn2 = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/unittest/smpl_0.000000_0.000000.png'))
 
         self.img1 = cv2.imread(fn1, 0)
         self.img2 = cv2.imread(fn2, 0)
