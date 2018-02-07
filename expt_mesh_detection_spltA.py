@@ -22,7 +22,7 @@ from commons.custom_find_obj import init_feature
 from commons.my_common import Timer
 from commons.my_common import format4pickle_pairs
 import commons.template_info as TmpInf
-from make_database import split_affinesim_combinable as slac
+from make_database import split_affinesim as spla
 
 # local modules
 
@@ -100,14 +100,10 @@ def draw_meshes(fn2, testset_full_path):
     pairs = list(list(cv2.KeyPoint(x=p[0][0], y=p[0][1], _size=p[1], _angle=p[2],
                             _response=p[3], _octave=p[4], _class_id=p[5]) for p in pair) for pair in index_pairs)
 
-    vis = slac.draw_matches_for_meshes(imgQ, imgT, temp_inf=temp_inf, Hs=Hs,
-                                       list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
-
+    vis = spla.draw_matches_for_meshes(imgQ, imgT, Hs=Hs)
     cv2.imwrite(os.path.join(detected_dir, fn2 + '.png'), vis)
 
-    viw = slac.explore_match_for_meshes('affine find_obj', imgQ, imgT, pairs,
-                                        temp_inf=temp_inf, Hs=Hs, status=statuses,
-                                        list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
+    viw = spla.explore_match_for_meshes('affine find_obj', imgQ, imgT, pairs, Hs=Hs)
 
     cv2.imwrite(os.path.join(line_dir, fn2 + '.png'), viw)
     cv2.destroyAllWindows()
@@ -125,11 +121,11 @@ def dump_matching_result(fn2, testset_full_path):
 
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
     with Timer('Detection'):
-        kpT, descT = slac.affine_detect(detector, imgT, pool=pool, simu_param='test')
-    logger.info('imgQ - %d features, imgT - %d features' % (slac.count_keypoints(splt_kpQ), len(kpT)))
+        kpT, descT = spla.affine_detect(detector, imgT, pool=pool, simu_param='test')
+    logger.info('imgQ - %d features, imgT - %d features' % (spla.count_keypoints(splt_kpQ), len(kpT)))
 
     with Timer('matching'):
-        mesh_pQ, mesh_pT, mesh_pairs = slac.match_with_cross(matcher, m_sdQ, m_skQ, descT, kpT)
+        mesh_pQ, mesh_pT, mesh_pairs = spla.match_with_cross(matcher, splt_descQ, splt_kpQ, descT, kpT)
 
     index_mesh_pairs = format4pickle_pairs(mesh_pairs)
     import joblib
@@ -146,7 +142,7 @@ def dump_matching_result(fn2, testset_full_path):
 
 
     with Timer('estimation'):
-        Hs, statuses, pairs = slac.calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs, median=median)
+        Hs, statuses, pairs = spla.calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs, median=median)
     joblib.dump(Hs, os.path.join(dump_match_testcase_dir, 'Hs.pikle'), compress=True)
     joblib.dump(statuses, os.path.join(dump_match_testcase_dir, 'statuses.pikle'), compress=True)
     index_pairs = tuple(
@@ -187,18 +183,17 @@ if __name__ == '__main__':
 
     try:
         with Timer('Lording pickle'):
-            splt_kpQ, splt_descQ = slac.affine_load_into_mesh(template_fn, temp_inf.get_splitnum())
+            splt_kpQ, splt_descQ = spla.affine_load_into_mesh(template_fn, temp_inf.get_splitnum())
     except ValueError as e:
         print(e.args)
         print('If you need to save {} to file as datavase. ¥n'
               + ' Execute makedb/make_split_combine_featureDB_from_templates.py')
         with Timer('Detection and dividing'):
-            splt_kpQ, splt_descQ = slac.affine_detect_into_mesh(detector, temp_inf.get_splitnum(),
+            splt_kpQ, splt_descQ = spla.affine_detect_into_mesh(detector, temp_inf.get_splitnum(),
                                                            imgQ, simu_param='default')
 
-    m_skQ, m_sdQ, m_k_num, merged_map = slac.combine_mesh_compact(splt_kpQ, splt_descQ, temp_inf)
-    list_merged_mesh_id = list(set(np.ravel(merged_map)))
-    median = np.nanmedian(m_k_num)
+    mesh_k_num = np.array([len(keypoints) for keypoints in splt_kpQ]).reshape(temp_inf.get_mesh_shape())
+    median = np.nanmedian(mesh_k_num)
 
     expt_name = os.path.basename(expt_path)
 

@@ -278,7 +278,7 @@ def draw_matches_for_meshes(imgT, imgQ, temp_inf, Hs=None, vis=None, list_merged
         vis = cv2.cvtColor(vis, cv2.COLOR_GRAY2BGR)
     meshes = explore_meshes(imgT,temp_inf, Hs, list_merged_mesh_id, merged_map)
     for mesh_corners in meshes:
-        cv2.polylines(vis, [mesh_corners], True, (255, 255, 0), thickness=3, lineType=cv2.LINE_AA)
+        cv2.polylines(vis, [mesh_corners], True, (25, 94, 255), thickness=3, lineType=cv2.LINE_AA)
 
     return vis
 
@@ -397,8 +397,6 @@ if __name__ == '__main__':
         with Timer('Detection and dividing'):
             splt_kpQ, splt_descQ = affine_detect_into_mesh(detector, temp_inf.get_splitnum(),
                                                            imgQ, simu_param='default')
-
-    #TODO
 
     sk_num = count_keypoints(splt_kpQ)
     m_skQ, m_sdQ, m_k_num, merged_map = combine_mesh_compact(splt_kpQ, splt_descQ, temp_inf)

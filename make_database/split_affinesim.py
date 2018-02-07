@@ -21,12 +21,15 @@ import numpy as np
 
 # local modules
 from commons.common import Timer
+from commons.my_common import load_pikle
 from commons.find_obj import init_feature
 from commons.affine_base import affine_detect
 from commons.template_info import TemplateInfo as TmpInf
 from commons.custom_find_obj import explore_match_for_meshes, filter_matches_wcross as c_filter
-from commons.custom_find_obj import calclate_Homography, calclate_Homography_hard, draw_matches_for_meshes
+from commons.custom_find_obj import calclate_Homography, draw_matches_for_meshes
+from commons.custom_find_obj import calclate_Homography4splitmesh
 from make_database import make_splitmap as mks
+from commons import my_file_path_manager as myfm
 
 def split_kd(keypoints, descrs, splt_num):
     tmp = TmpInf()
@@ -59,6 +62,14 @@ def split_kd(keypoints, descrs, splt_num):
         splits_d[i] = np.array(split_d, dtype=np.float32)
 
     return splits_k, splits_d
+
+def affine_load_into_mesh(template_fn, splt_num):
+    pikle_path = myfm.get_pikle_path(template_fn)
+    if not os.path.exists(pikle_path):
+        print('Not found {}'.format(pikle_path))
+        raise ValueError('Failed to load pikle:', pikle_path)
+    kp, des = load_pikle(pikle_path)
+    return split_kd(kp, des, splt_num)
 
 def affine_detect_into_mesh(detector, split_num, img1, mask=None, simu_param='default'):
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
