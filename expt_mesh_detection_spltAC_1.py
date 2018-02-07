@@ -78,6 +78,39 @@ def check_not_None(arg):
         return len(arg)
     else:
         return 0
+
+def draw_meshes(fn2, testset_full_path):
+    fn, ext = os.path.splitext(fn2)
+    testcase_full_path = os.path.join(testset_full_path, fn2)
+    imgT = cv2.imread(testcase_full_path, 0)
+    if imgT is None:
+        logger.info('Failed to load fn2:', testcase_full_path)
+        raise ValueError('Not found the file')
+    logger.info("Using Training: {}".format(fn2))
+
+    pool = ThreadPool(processes=cv2.getNumberOfCPUs())
+    with Timer('Detection'):
+        kpT, descT = slac.affine_detect(detector, imgT, pool=pool, simu_param='test')
+    logger.info('imgQ - %d features, imgT - %d features' % (slac.count_keypoints(splt_kpQ), len(kpT)))
+
+    with Timer('matching'):
+        mesh_pQ, mesh_pT, mesh_pairs = slac.match_with_cross(matcher, m_sdQ, m_skQ, descT, kpT)
+
+    with Timer('estimation'):
+        Hs, statuses, pairs = slac.calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs)
+
+    vis = slac.draw_matches_for_meshes(imgQ, imgT, temp_inf=temp_inf, Hs=Hs,
+                                       list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
+
+    cv2.imwrite(os.path.join(detected_dir, fn2 + '.png'), vis)
+
+    viw = slac.explore_match_for_meshes('affine find_obj', imgQ, imgT, pairs,
+                                        temp_inf=temp_inf, Hs=Hs, status=statuses,
+                                        list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
+
+    cv2.imwrite(os.path.join(line_dir, fn2 + '.png'), viw)
+    cv2.destroyAllWindows()
+
 if __name__ == '__main__':
     import sys, getopt, os
     opts, args = getopt.getopt(sys.argv[1:], '', ['feature='])
@@ -137,57 +170,70 @@ if __name__ == '__main__':
     detected_dir = myfsys.setup_output_directory(output_dir, 'detected_mesh')
     line_dir = myfsys.setup_output_directory(output_dir, 'dmesh_line')
 
-    vals_list = []
+
     for fn2 in testcase_fns:
-        fn, ext = os.path.splitext(fn2)
-        testcase_full_path = os.path.join(testset_full_path, fn2)
-        imgT = cv2.imread(testcase_full_path, 0)
-        if imgT is None:
-            logger.info('Failed to load fn2:', testcase_full_path)
+
+        try:
+            draw_meshes(fn2, testset_full_path)
+        except ValueError as e:
+            import traceback
+            traceback.print_exc()
+            logger.warning(e.args)
             logger.info('====CONTINUE====')
             continue
-        logger.info("Using Training: {}".format(fn2))
+        finally:
+            pass
 
-        pool = ThreadPool(processes=cv2.getNumberOfCPUs())
-        with Timer('Detection'):
-            kpT, descT = slac.affine_detect(detector, imgT, pool=pool, simu_param='test')
-        logger.info('imgQ - %d features, imgT - %d features' % (slac.count_keypoints(splt_kpQ), len(kpT)))
 
-        with Timer('matching'):
-            mesh_pQ, mesh_pT, mesh_pairs = slac.match_with_cross(matcher, m_sdQ, m_skQ, descT, kpT)
-
-        # Hs, statuses, pairs = calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs)
+        # fn, ext = os.path.splitext(fn2)
+        # testcase_full_path = os.path.join(testset_full_path, fn2)
+        # imgT = cv2.imread(testcase_full_path, 0)
+        # if imgT is None:
+        #     logger.info('Failed to load fn2:', testcase_full_path)
+        #     logger.info('====CONTINUE====')
+        #     continue
+        # logger.info("Using Training: {}".format(fn2))
+        #
+        # pool = ThreadPool(processes=cv2.getNumberOfCPUs())
+        # with Timer('Detection'):
+        #     kpT, descT = slac.affine_detect(detector, imgT, pool=pool, simu_param='test')
+        # logger.info('imgQ - %d features, imgT - %d features' % (slac.count_keypoints(splt_kpQ), len(kpT)))
+        #
+        # with Timer('matching'):
+        #     mesh_pQ, mesh_pT, mesh_pairs = slac.match_with_cross(matcher, m_sdQ, m_skQ, descT, kpT)
+        #
+        # # Hs, statuses, pairs = calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs)
+        # # with Timer('estimation'):
+        # #     Hs, statuses, pairs = slac.calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs)
+        # Hs = []
+        # statuses = []
+        # pairs = []
+        # def f(*pQpTp):
+        #     inlier_pairs, H, status = calclate_Homography(pQpTp[0], pQpTp[1], pQpTp[2])
+        #     Hs.append(H)
+        #     pairs.extend(inlier_pairs)
+        #     if status is None:
+        #         status = []
+        #     statuses.extend(status)
+        #     return [len(inlier_pairs), len(status), len(pQpTp[2])]
+        #
         # with Timer('estimation'):
-        #     Hs, statuses, pairs = slac.calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs)
-        Hs = []
-        statuses = []
-        pairs = []
-        def f(*pQpTp):
-            inlier_pairs, H, status = calclate_Homography(pQpTp[0], pQpTp[1], pQpTp[2])
-            Hs.append(H)
-            pairs.extend(inlier_pairs)
-            if status is None:
-                status = []
-            statuses.extend(status)
-            return [len(inlier_pairs), len(status), len(pQpTp[2])]
-
-        with Timer('estimation'):
-            vals_list = np.array(list(map(f, mesh_pQ, mesh_pT, mesh_pairs)))
-
-        vis = slac.draw_matches_for_meshes(imgQ, imgT, temp_inf=temp_inf, Hs=Hs,
-                                           list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
-
-        cv2.imwrite(os.path.join(detected_dir, fn2 + '.png'), vis)
-
-        viw = slac.explore_match_for_meshes('affine find_obj', imgQ, imgT, pairs,
-                                       temp_inf=temp_inf, Hs=Hs, status=statuses,
-                                       list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
-
-        cv2.imwrite(os.path.join(line_dir, fn2 + '.png'), viw)
-        cv2.destroyAllWindows()
+        #     vals_list = np.array(list(map(f, mesh_pQ, mesh_pT, mesh_pairs)))
+        #
+        # vis = slac.draw_matches_for_meshes(imgQ, imgT, temp_inf=temp_inf, Hs=Hs,
+        #                                    list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
+        #
+        # cv2.imwrite(os.path.join(detected_dir, fn2 + '.png'), vis)
+        #
+        # viw = slac.explore_match_for_meshes('affine find_obj', imgQ, imgT, pairs,
+        #                                temp_inf=temp_inf, Hs=Hs, status=statuses,
+        #                                list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
+        #
+        # cv2.imwrite(os.path.join(line_dir, fn2 + '.png'), viw)
+        # cv2.destroyAllWindows()
 
 
-    keywords = list(map(lambda z: os.path.splitext(z)[0], testcase_fns))
-    dictionary = dict(zip(keywords, vals_list))
-    np.savez_compressed(os.path.join(output_dir, testset_name), **dictionary)
+    # keywords = list(map(lambda z: os.path.splitext(z)[0], testcase_fns))
+    # dictionary = dict(zip(keywords, vals_list))
+    # np.savez_compressed(os.path.join(output_dir, testset_name), **dictionary)
 

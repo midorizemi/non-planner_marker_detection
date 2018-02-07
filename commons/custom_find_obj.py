@@ -198,7 +198,7 @@ def explore_match_for_meshes(win, imgT, imgQ, kp_pairs, status=None, Hs=None):
 
 def calclate_Homography(pQ, pT, pairs):
     logger.info('Now in {}'.format(inspect.currentframe().f_code.co_name))
-    if len(pQ) >= 4:
+    if len(pQ) >= 10:
         H, status = cv2.findHomography(pQ, pT, cv2.RANSAC, 5.0)
         if status is not None and not len(status) == 0 :
             logger.info("{0} / {1} = {2:0.3f} inliers/matched=ratio".format(np.sum(status), len(status), np.sum(status)/len(status)))
@@ -231,7 +231,8 @@ def calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs):
     for pQ, pT, pairs in zip(mesh_pQ, mesh_pT, mesh_pairs):
         pairs, H, status = calclate_Homography(pQ, pT, pairs)
         Hs.append(H)
-        statuses.append(status)
-        for p in pairs:
-            kp_pairs_long.append(p)
+        if statuses is not None:
+            statuses.extend(status)
+        if pairs is not None:
+            kp_pairs_long.extend(pairs)
     return Hs, statuses, kp_pairs_long

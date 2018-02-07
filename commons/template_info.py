@@ -50,8 +50,10 @@ class TemplateInfo:
             elif val < 0:
                 return 0
             else: return val
-        return np.float32([[x, y], [overw(x + self.offset_c), y],
-                           [overw(x + self.offset_c), overh(y + self.offset_r)], [x, overh(y + self.offset_r)]])
+        # return np.float32([[x, y], [overw(x + self.offset_c), y],
+        #                    [overw(x + self.offset_c), overh(y + self.offset_r)], [x, overh(y + self.offset_r)]])
+        return np.float32([[y, x], [y, overw(x + self.offset_c)],
+                           [overh(y + self.offset_r), overw(x + self.offset_c)], [overh(y + self.offset_r), x]])
 
     def get_meshid_index(self, id):
         #行列のインデックスを返す
