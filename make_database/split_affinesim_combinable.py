@@ -362,9 +362,10 @@ if __name__ == '__main__':
         import os
 
         dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
-        fn1 = os.path.abspath(os.path.join(dir, 'data/templates/qrmarker.png'))
-        fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
+        fn1 = os.path.abspath(os.path.join(dir, 'data/templates/menko.png'))
+        # fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
         # fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/011_080-100.png'))
+        fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/219_020-020.png'))
 
     imgQ = cv2.imread(fn1, 0)
     imgT = cv2.imread(fn2, 0)
@@ -403,8 +404,7 @@ if __name__ == '__main__':
     if not sk_num == count_keypoints(m_skQ) and not count_keypoints(m_skQ) == np.sum(m_k_num):
         print('{0}, {1}, {2}'.format(sk_num, count_keypoints(m_skQ), np.sum(m_k_num)))
         sys.exit(1)
-    m_skQ = compact_merged_splt(m_skQ)
-    m_sdQ = compact_merged_splt(m_sdQ)
+    median = np.nanmedian(m_k_num)
     list_merged_mesh_id = list(set(np.ravel(merged_map)))
 
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
@@ -417,7 +417,7 @@ if __name__ == '__main__':
 
     # Hs, statuses, pairs = calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs)
     with Timer('estimation'):
-        Hs, statuses, pairs = calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs)
+        Hs, statuses, pairs = calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs, median=median)
 
     vis = draw_matches_for_meshes(imgQ, imgT, temp_inf=temp_inf, Hs=Hs, list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
     cv2.imshow('view weak meshes', vis)

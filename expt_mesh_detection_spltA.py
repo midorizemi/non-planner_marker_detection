@@ -215,9 +215,7 @@ if __name__ == '__main__':
 
 
 
-    test = 0
     for fn2 in testcase_fns:
-
         try:
             if task == 'draw':
                 draw_meshes(fn2, testset_full_path)
@@ -231,10 +229,6 @@ if __name__ == '__main__':
             continue
         finally:
             pass
-            if test<5:
-                test += 1
-            else:
-                sys.exit(0)
 
 
         # fn, ext = os.path.splitext(fn2)
