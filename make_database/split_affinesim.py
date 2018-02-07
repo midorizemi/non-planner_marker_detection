@@ -64,6 +64,7 @@ def split_kd(keypoints, descrs, splt_num):
     return splits_k, splits_d
 
 def affine_load_into_mesh(template_fn, splt_num):
+    import os
     pikle_path = myfm.get_pikle_path(template_fn)
     if not os.path.exists(pikle_path):
         print('Not found {}'.format(pikle_path))
