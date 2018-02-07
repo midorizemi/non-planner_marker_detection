@@ -33,7 +33,7 @@ from commons import my_file_path_manager as myfm
 
 def split_kd(keypoints, descrs, splt_num):
     tmp = TmpInf()
-    split_tmp_img = mks.make_splitmap(tmp)
+    split_tmp_img = tmp.make_splitmap()
     assert isinstance(split_tmp_img, np.ndarray)
     global descrs_list
     if isinstance(descrs, np.ndarray):
