@@ -166,7 +166,7 @@ if __name__ == '__main__':
     # logger.debug(testcase_fns)
 
 
-    output_dir = myfsys.setup_output_directory(expt_name, testset_name, 'outputs', prefix + template_fn)
+    output_dir = myfsys.setup_output_directory(expt_name, testset_name, prefix + template_fn)
     detected_dir = myfsys.setup_output_directory(output_dir, 'detected_mesh')
     line_dir = myfsys.setup_output_directory(output_dir, 'dmesh_line')
 
