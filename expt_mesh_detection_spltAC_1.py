@@ -144,9 +144,9 @@ if __name__ == '__main__':
         with Timer('Lording pickle'):
             splt_kpQ, splt_descQ = slac.affine_load_into_mesh(template_fn, temp_inf.get_splitnum())
     except ValueError as e:
-        print(e)
+        print(e.args)
         print('If you need to save {} to file as datavase. ¥n'
-              + ' Execute /Users/tiwasaki/PycharmProjects/makedb/make_split_combine_featureDB_from_templates.py')
+              + ' Execute makedb/make_split_combine_featureDB_from_templates.py')
         with Timer('Detection and dividing'):
             splt_kpQ, splt_descQ = slac.affine_detect_into_mesh(detector, temp_inf.get_splitnum(),
                                                            imgQ, simu_param='default')
