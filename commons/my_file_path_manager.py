@@ -122,6 +122,7 @@ def make_list_testcase_file_name(*option_dirs, prefix_shape, template_fn):
 def make_list_template_filename():
     a = os.listdir(get_dir_full_path_(DirNames.TEMPLATES.value))
     newlist = [template_fn for template_fn in a if not template_fn.startswith('mesh')]
+    newlist = [template_fn for template_fn in newlist if not template_fn.startswith('dump')]
     return newlist
 
 if __name__ == '__main__':
