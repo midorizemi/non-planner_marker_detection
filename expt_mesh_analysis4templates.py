@@ -70,13 +70,21 @@ def expt_setting(**kwargs):
 
 def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     kw = {'fn1':fn1, 'fn2':fn2, 'feature':feature, 'template_information':template_information}
-    print(kw)
-    print(expt_name)
     imgQ, imgT, detector, matcher, temp_inf = expt_setting(**kw)
 
     print('using', feature)
-    with Timer('calculate Keypoints Descriptors and splitting....'):
-        splt_k, splt_d = slac.affine_detect_into_mesh(detector, temp_inf.get_splitnum(), imgQ, simu_param='asift')
+    temp_inf = slac.TmpInf(**template_information)
+    try:
+        with Timer('Lording pickle'):
+            splt_k, splt_d = slac.affine_load_into_mesh(os.path.splitext(temp_inf.tmp_img)[0],
+                                                        temp_inf.get_splitnum())
+    except ValueError as e:
+        print(e)
+        print('If you need to save {} to file as datavase. ¥n'
+              + ' Execute /Users/tiwasaki/PycharmProjects/makedb/make_split_combine_featureDB_from_templates.py')
+        with Timer('Detection and dividing'):
+            splt_k, splt_d = slac.affine_detect_into_mesh(detector, temp_inf.get_splitnum(),
+                                                          imgQ, simu_param='default')
 
     mesh_k_num = np.array([len(keypoints) for keypoints in splt_k]).reshape(temp_inf.get_mesh_shape())
 
@@ -86,16 +94,15 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     print("平均, 中央値, 最大値, 最小値, 値の範囲, 標準偏差, 分散")
     print("{0:4f}, {1:4f}, {2:4d}, {3:4d}, {4:4d}, {5:4f}, {6:4f}".format(*al_vals))
 
-
     output_dir = slac.myfm.setup_output_directory(expt_name, "plots")
-    pp = PdfPages(os.path.join(output_dir, 'analyse_'+temp_inf.tmp_img+'.pdf'))
     plt.figure(figsize=(16, 12))
-    sns.set("paper", "whitegrid", "dark", font_scale=1.5)
+    sns.set("paper", "whitegrid", "dark", font_scale=3)
     h = sns.heatmap(mesh_k_num, annot=True, fmt='d', cmap='Blues')
     h.set(xlabel="x")
     h.set(ylabel="y")
     h.set(title="Heatmap of keypoint amounts -" + temp_inf.tmp_img)
     h_fig = h.get_figure()
+    pp = PdfPages(os.path.join(output_dir, 'analyse_'+temp_inf.tmp_img+'.pdf'))
     h_fig.savefig(pp, format='pdf')
 
     df = slac.analysis_kp(splt_k, temp_inf)
@@ -110,7 +117,7 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     #         ax.set(title="Kernel density estimation")
 
     plt.figure(figsize=(16, 12))
-    sns.set("paper", "whitegrid", "dark", font_scale=1.5)
+    sns.set("paper", "whitegrid", "dark", font_scale=3)
     g = sns.kdeplot(df['x'], df['y'], shade=True, shade_lowest=False)
     g.set(ylim=(600, 0))
     g.set(xlim=(0, 800))
@@ -120,23 +127,23 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     g_fig = g.get_figure()
     g_fig.savefig(pp, format='pdf')
 
-    logger.info('show mesh map')
-    plt.figure()
-    sns.set("paper", "whitegrid", "dark", font_scale=1.5)
-    mesh_map = temp_inf.get_mesh_map()
-    mmap_ax = sns.heatmap(mesh_map, annot=True, fmt="d")
-    mmap_ax.set(xlabel="x")
-    mmap_ax.set(ylabel="y")
-    mmap_ax.set(title="Mesh map -" + temp_inf.tmp_img)
-    mmap_ax_fig = h.get_figure()
-    mmap_ax_fig.savefig(pp, format='pdf')
+    # logger.info('show mesh map')
+    # plt.figure()
+    # sns.set("paper", "whitegrid", "dark", font_scale=1.5)
+    # mesh_map = temp_inf.get_mesh_map()
+    # mmap_ax = sns.heatmap(mesh_map, annot=True, fmt="d")
+    # mmap_ax.set(xlabel="x")
+    # mmap_ax.set(ylabel="y")
+    # mmap_ax.set(title="Mesh map -" + temp_inf.tmp_img)
+    # mmap_ax_fig = h.get_figure()
+    # mmap_ax_fig.savefig(pp, format='pdf')
 
     with Timer('merging'):
         msplt_k, msplt_d, mmesh_k_num, mmesh_map = slac.combine_mesh(splt_k, splt_d, temp_inf)
 
     logger.info('show merged mesh map')
     plt.figure(figsize=(16, 12))
-    sns.set("paper", "whitegrid", "dark", font_scale=1.5)
+    sns.set("paper", "whitegrid", "dark", font_scale=3)
     merged_map_ax = sns.heatmap(mmesh_map, annot=True, fmt="d")
     merged_map_ax.set(xlabel="x")
     merged_map_ax.set(ylabel="y")
@@ -145,7 +152,7 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     merged_map_ax_fig.savefig(pp, format='pdf')
 
     plt.figure(figsize=(16, 12))
-    sns.set("paper", "whitegrid", "dark", font_scale=1.5)
+    sns.set("paper", "whitegrid", "dark", font_scale=3)
     mh = sns.heatmap(mmesh_k_num, annot=True, fmt='d', cmap='Blues')
     mh.set(xlabel="x")
     mh.set(ylabel="y")
@@ -157,14 +164,35 @@ def main_1(expt_name, fn1, fn2, feature='sift', **template_information):
     pp.close()
 
 def main_2(expt_name, fn1, fn2, feature='sift', **template_information):
+    import os
     kw = {'fn1':fn1, 'fn2':fn2, 'feature':feature, 'template_information':template_information}
     imgQ, imgT, detector, matcher, temp_inf = expt_setting(**kw)
 
     print('using', feature)
-    with Timer('calculate Keypoints Descriptors and splitting....'):
-        splt_k, splt_d = slac.affine_detect_into_mesh(detector, temp_inf.get_splitnum(), imgQ, simu_param='asift')
-    with Timer('merging'):
-        msplt_k, msplt_d, mmesh_k_num, mmesh_map = slac.combine_mesh(splt_k, splt_d, temp_inf)
+    temp_inf = slac.TmpInf(**template_information)
+    a = temp_inf.tmp_img
+    try:
+        with Timer('Lording pickle'):
+            splt_k, splt_d = slac.affine_load_into_mesh(os.path.splitext(temp_inf.tmp_img)[0],
+                                                        temp_inf.get_splitnum())
+    except ValueError as e:
+        print(e)
+        print('If you need to save {} to file as datavase. ¥n'
+              + ' Execute /Users/tiwasaki/PycharmProjects/makedb/make_split_combine_featureDB_from_templates.py')
+        with Timer('Detection and dividing'):
+            splt_k, splt_d = slac.affine_detect_into_mesh(detector, temp_inf.get_splitnum(),
+                                                           imgQ, simu_param='default')
+
+    img = imgQ.copy()
+    def plot_kps(img, keypoints):
+        if not len(keypoints) == 0:
+            out_img = cv2.drawKeypoints(img, keypoints.pop(0), None, color=(0,255,0))
+            return plot_kps(out_img, keypoints)
+        return img
+    out_img = plot_kps(img, splt_k)
+    output_dir = slac.myfm.setup_output_directory(expt_name, "plots")
+    cv2.imwrite(os.path.join(output_dir, 'analyse_'+temp_inf.tmp_img+'.png'), out_img)
+
 
 if __name__ == '__main__':
     test_module = test_module()
