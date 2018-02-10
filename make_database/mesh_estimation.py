@@ -1,8 +1,8 @@
-# python
 
 from make_database import split_affinesim as splta
 from commons.my_common import format4pickle_pairs
 import os
+
 
 if __name__ == '__main__':
     print(__doc__)
@@ -57,17 +57,7 @@ if __name__ == '__main__':
     mesh_k_num = splta.np.array([len(keypoints) for keypoints in splt_kpQ]).reshape(temp_inf.get_mesh_shape())
     median = splta.np.nanmedian(mesh_k_num)
 
-    # 実験用出力先パスの生成
-    expt_path = splta.myfm.setup_expt_directory(os.path.basename(__file__))
-    expt_name = os.path.basename(expt_path)
-    testset_name = os.path.basename(testset_dir_full)
-    output_dir = splta.myfm.setup_output_directory(expt_name, testset_name)
-    detected_dir = splta.myfm.setup_output_directory(output_dir, 'detected_mesh')
-    line_dir = splta.myfm.setup_output_directory(output_dir, 'dmesh_line')
-    dump_match_dir = splta.myfm.setup_output_directory(output_dir, 'dump_match_dir')
-    dump_detected_dir = splta.myfm.setup_output_directory(output_dir, 'dump_detected_dir')
-
-    fn, ext = os.path.splitext(os.path.basename(fn2_full))
+    fn, ext = os.path.splitext(fn2_full)
     imgT = splta.cv2.imread(fn2_full, 0)
     if imgT is None:
         print('Failed to load fn2:', fn2_full)
@@ -82,31 +72,3 @@ if __name__ == '__main__':
     with splta.Timer('matching'):
         mesh_pQ, mesh_pT, mesh_pairs = splta.match_with_cross(matcher, splt_descQ, splt_kpQ, descT, kpT)
     index_mesh_pairs = format4pickle_pairs(mesh_pairs)
-    import joblib
-
-    dump_match_testcase_dir = splta.myfm.setup_output_directory(dump_match_dir, fn)
-    print(dump_match_testcase_dir)
-    joblib.dump(mesh_pQ, os.path.join(dump_match_testcase_dir, 'mesH_pQ.pikle'), compress=True)
-    joblib.dump(mesh_pT, os.path.join(dump_match_testcase_dir, 'mesH_pT.pikle'), compress=True)
-    import pickle
-
-    with open(os.path.join(dump_match_testcase_dir, 'mesh_pairs.pickle'), 'wb') as f:
-        pickle.dump(index_mesh_pairs, f)
-        f.close()
-
-    with splta.Timer('estimation'):
-        Hs, statuses, pairs = splta.calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs, median=median)
-    joblib.dump(Hs, os.path.join(dump_match_testcase_dir, 'Hs.pikle'), compress=True)
-    joblib.dump(statuses, os.path.join(dump_match_testcase_dir, 'statuses.pikle'), compress=True)
-    index_pairs = tuple(
-        tuple((p.pt, p.size, p.angle, p.response, p.octave, p.class_id) for p in pair) for pair in pairs)
-    with open(os.path.join(dump_match_testcase_dir, 'pairs.pickle'), 'wb') as f:
-        pickle.dump(index_pairs, f)
-
-    # vis = splta.draw_matches_for_meshes(imgQ, imgT, Hs=Hs)
-    # splta.cv2.imwrite(os.path.join(detected_dir, fn + '.png'), vis)
-    #
-    # viw = splta.explore_match_for_meshes('affine find_obj', imgQ, imgT, pairs, Hs=Hs)
-    #
-    # splta.cv2.imwrite(os.path.join(line_dir, fn + '.png'), viw)
-    # splta.cv2.destroyAllWindows()
