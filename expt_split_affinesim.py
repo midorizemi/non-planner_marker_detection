@@ -16,10 +16,11 @@ if __name__ == '__main__':
     try:
         fn1_full, fn2_full, pr, testset_dir_full = args
     except:
-        dir_path_full = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
+        dir_path_full = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
         fn1_full = os.path.abspath(os.path.join(dir_path_full, 'data/templates/qrmarker.png'))
-        fn2_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
-        testset_dir_full = "pl_qrmarker"
+        fn2_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/mltf_qrmarker/057_070-200.png'))
+        testset_dir_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/mltf_qrmarker'))
+        pr = "mltf_"
 
     imgQ = splta.cv2.imread(fn1_full, 0)
     imgT = splta.cv2.imread(fn2_full, 0)

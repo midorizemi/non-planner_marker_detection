@@ -1,8 +1,31 @@
 
 from make_database import split_affinesim as splta
-from commons.my_common import format4pickle_pairs
+from commons.my_common import load_pickle_mesh_matchepairs
+from commons.my_common import load_pickle_matchepairs
 import os
 
+
+def load_pickle_match_with_cross(expt_name, testset_name, fn):
+    output_dir = splta.myfm.setup_output_directory(expt_name, testset_name)
+    dump_match_dir = splta.myfm.setup_output_directory(output_dir, 'dump_match_dir')
+    dump_match_testcase_dir = splta.myfm.setup_output_directory(dump_match_dir, fn)
+    import joblib
+    mesh_pQ = joblib.load(os.path.join(dump_match_testcase_dir, 'mesH_pQ.pikle'))
+    mesh_pT = joblib.load(os.path.join(dump_match_testcase_dir, 'mesH_pT.pikle'))
+    each_mesh_matchnum = list(len(mesh) for mesh in mesh_pQ)
+    mesh_pairs = load_pickle_mesh_matchepairs(os.path.join(dump_match_testcase_dir, 'mesh_pairs.pickle'),
+                                              each_mesh_matchnum)
+    return mesh_pQ, mesh_pT, mesh_pairs
+
+def load_pickle_calclate_Homography4splitmesh(expt_name, testset_name, fn):
+    output_dir = splta.myfm.setup_output_directory(expt_name, testset_name)
+    dump_match_dir = splta.myfm.setup_output_directory(output_dir, 'dump_match_dir')
+    dump_match_testcase_dir = splta.myfm.setup_output_directory(dump_match_dir, fn)
+    import joblib
+    Hs = joblib.load(os.path.join(dump_match_testcase_dir, 'Hs.pikle'))
+    statuses = joblib.load(os.path.join(dump_match_testcase_dir, 'statuses.pikle'))
+    pairs = load_pickle_matchepairs(os.path.join(dump_match_testcase_dir, 'pairs.pickle'))
+    return Hs, statuses, pairs
 
 if __name__ == '__main__':
     print(__doc__)
@@ -18,8 +41,9 @@ if __name__ == '__main__':
     except:
         dir_path_full = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
         fn1_full = os.path.abspath(os.path.join(dir_path_full, 'data/templates/qrmarker.png'))
-        fn2_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
-        testset_dir_full = "pl_qrmarker"
+        fn2_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/mltf_qrmarker/057_070-200.png'))
+        testset_dir_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/mltf_qrmarker'))
+        pr = "mltf_"
 
     imgQ = splta.cv2.imread(fn1_full, 0)
     imgT = splta.cv2.imread(fn2_full, 0)
@@ -57,7 +81,8 @@ if __name__ == '__main__':
     mesh_k_num = splta.np.array([len(keypoints) for keypoints in splt_kpQ]).reshape(temp_inf.get_mesh_shape())
     median = splta.np.nanmedian(mesh_k_num)
 
-    fn, ext = os.path.splitext(fn2_full)
+    fn, ext = os.path.splitext(os.path.basename(fn2_full))
+    testset_name = os.path.basename(os.path.dirname(fn2_full))
     imgT = splta.cv2.imread(fn2_full, 0)
     if imgT is None:
         print('Failed to load fn2:', fn2_full)
@@ -69,6 +94,22 @@ if __name__ == '__main__':
         kpT, descT = splta.affine_detect(detector, imgT, pool=pool, simu_param='test')
     print('imgQ - %d features, imgT - %d features' % (splta.count_keypoints(splt_kpQ), len(kpT)))
 
-    with splta.Timer('matching'):
-        mesh_pQ, mesh_pT, mesh_pairs = splta.match_with_cross(matcher, splt_descQ, splt_kpQ, descT, kpT)
-    index_mesh_pairs = format4pickle_pairs(mesh_pairs)
+    dumped_exdir = "expt_split_affinesim"
+    #dumped_exdir = "expt_split_affinesim_conbine"
+    try:
+        with splta.Timer('Loarding matching pickle'):
+            mesh_pQ, mesh_pT, mesh_pairs = load_pickle_match_with_cross(dumped_exdir, testset_name, fn)
+    except :
+        print('Failed Load matching result')
+        with splta.Timer('matching'):
+            mesh_pQ, mesh_pT, mesh_pairs = splta.match_with_cross(matcher, splt_descQ, splt_kpQ, descT, kpT)
+
+    try:
+        with splta.Timer('Loading estimation result'):
+            Hs, statuses, pairs = load_pickle_calclate_Homography4splitmesh(dumped_exdir, testset_name, fn)
+    except:
+        print('Failed loading estimated mesh')
+        with splta.Timer('estimation'):
+            Hs, statuses, pairs = splta.calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs, median=median)
+
+
