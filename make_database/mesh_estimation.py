@@ -27,6 +27,55 @@ def load_pickle_calclate_Homography4splitmesh(expt_name, testset_name, fn):
     pairs = load_pickle_matchepairs(os.path.join(dump_match_testcase_dir, 'pairs.pickle'))
     return Hs, statuses, pairs
 
+def explore_meshes(Hs=None):
+    meshes = []
+    for id, H in enumerate(Hs):
+        mesh_corners = temp_inf.calculate_mesh_corners(id)
+        if H is not None:
+            corners = splta.np.int32(splta.cv2.perspectiveTransform(mesh_corners.reshape(1, -1, 2), H).reshape(-1, 2))
+            if is_goodMeshEstimation(corners):
+                meshes.append(corners)
+            else:
+                meshes.append(None)
+                Hs[id] = None
+        else:
+            meshes.append(None)
+
+    return meshes, Hs
+
+def is_goodMeshEstimation(corners: splta.np.ndarray):
+    hole_area = temp_inf.cols * temp_inf.rows
+    mesh_area = temp_inf.offset_c * temp_inf.offset_r
+    pt1 = corners[0]
+    pt2 = corners[1]
+    pt3 = corners[2]
+    pt4 = corners[3]
+    vect13 = pt3 - pt1
+    vect24 = pt4 - pt2
+
+    leng13 = splta.np.linalg.norm(vect13)
+    leng24 = splta.np.linalg.norm(vect24)
+    sinTheta = splta.np.sin(splta.np.arccos(vect13.dot(vect24)/leng13*leng24))
+    local_area = leng13*leng24/2*sinTheta
+    if not hole_area/2 > local_area or not mesh_area/10 < local_area:
+        #質が悪いやつ
+        return False
+
+    def is_cross(p1, p2, p3, p4):
+        t1 = (p1[0] - p2[0]) * (p3[1] - p1[1]) + (p1[1] - p2[1]) * (p1[0] - p3[0])
+        t2 = (p1[0] - p2[0]) * (p4[1] - p1[1]) + (p1[1] - p2[1]) * (p1[0] - p4[0])
+        t3 = (p3[0] - p4[0]) * (p1[1] - p3[1]) + (p3[1] - p4[1]) * (p3[0] - p1[0])
+        t4 = (p3[0] - p4[0]) * (p2[1] - p3[1]) + (p3[1] - p4[1]) * (p3[0] - p2[0])
+        return t1 * t2 < 0 and t3 * t4 < 0
+    if is_cross(pt1, pt2, pt3, pt4):
+        return False
+    if is_cross(pt2, pt3, pt4, pt1):
+        return False
+    return True
+
+
+
+
 if __name__ == '__main__':
     print(__doc__)
 
@@ -112,4 +161,6 @@ if __name__ == '__main__':
         with splta.Timer('estimation'):
             Hs, statuses, pairs = splta.calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs, median=median)
 
+    mesh_corners, good_Hs = explore_meshes(Hs)
 
+    print("xxxx")
