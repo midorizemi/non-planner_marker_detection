@@ -50,10 +50,10 @@ class TemplateInfo:
             elif val < 0:
                 return 0
             else: return val
-        # return np.float32([[x, y], [overw(x + self.offset_c), y],
-        #                    [overw(x + self.offset_c), overh(y + self.offset_r)], [x, overh(y + self.offset_r)]])
-        return np.float32([[y, x], [y, overw(x + self.offset_c)],
-                           [overh(y + self.offset_r), overw(x + self.offset_c)], [overh(y + self.offset_r), x]])
+        return np.float32([[x, y], [overw(x + self.offset_c), y],
+                           [overw(x + self.offset_c), overh(y + self.offset_r)], [x, overh(y + self.offset_r)]])
+        # return np.float32([[y, x], [y, overw(x + self.offset_c)],
+        #                    [overh(y + self.offset_r), overw(x + self.offset_c)], [overh(y + self.offset_r), x]])
 
     def get_meshid_index(self, id):
         #行列のインデックスを返す
@@ -116,6 +116,39 @@ class TemplateInfo:
                 a = [id - 1, id + 1, id + (self.scols - 1)]
                 return list(map(validate, v_(a)))
 
+    def get_meshidlist_8neighbor(self, id):
+        a = [id - 1, id - 1 - self.scols,
+             id - self.scols, id + 1 - self.scols, id + 1,
+             id + 1 + self.scols, id + self.scols, id + self.scols - 1]
+        def validate(x):
+            if x < 0:
+                return None
+            else:
+                return x
+        def v_(*args):
+            a = list(args)
+            if int(id/self.scols) == 0:
+                #上辺
+                a[1] = -1
+                a[2] = -1
+                a[3] = -1
+            if int(id%self.scols) == 0:
+                #左辺
+                a[1] = -1
+                a[0] = -1
+                a[7] = -1
+            if int(id/self.scols) == self.srows -1:
+                #下辺
+                a[5] = -1
+                a[6] = -1
+                a[7] = -1
+            if int(id%self.scols) == self.scols -1:
+                #右辺
+                a[3] = -1
+                a[4] = -1
+                a[5] = -1
+            return a
+        return list(map(validate, v_(*a)))
     def get_nneighbor(self, id, mesh_map=None):
         pass
 

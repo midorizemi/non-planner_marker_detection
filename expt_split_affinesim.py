@@ -82,19 +82,58 @@ if __name__ == '__main__':
 
     with splta.Timer('matching'):
         mesh_pQ, mesh_pT, mesh_pairs = splta.match_with_cross(matcher, splt_descQ, splt_kpQ, descT, kpT)
-    index_mesh_pairs = format4pickle_pairs(mesh_pairs)
-    import joblib
 
+    import joblib
     dump_match_testcase_dir = splta.myfm.setup_output_directory(dump_match_dir, fn)
     print(dump_match_testcase_dir)
     joblib.dump(mesh_pQ, os.path.join(dump_match_testcase_dir, 'mesH_pQ.pikle'), compress=True)
     joblib.dump(mesh_pT, os.path.join(dump_match_testcase_dir, 'mesH_pT.pikle'), compress=True)
-    import pickle
 
+    import pickle
+    index_mesh_pairs = format4pickle_pairs(mesh_pairs)
     with open(os.path.join(dump_match_testcase_dir, 'mesh_pairs.pickle'), 'wb') as f:
         pickle.dump(index_mesh_pairs, f)
         f.close()
-
+    import make_database.mesh_estimation as mesti
+    _mesh_pQ, _mesh_pT, _mesh_pairs = mesti.load_pickle_match_with_cross(expt_name, testset_name, fn)
+    for mQ, mT, mP, _mQ, _mT, _mP in zip(mesh_pQ, mesh_pT, mesh_pairs, _mesh_pQ, _mesh_pT, _mesh_pairs):
+        for q, t, p, _q, _t, _p in zip(mQ, mT, mP, _mQ, _mT, _mP):
+            if q[0] == _q[0]:
+                pass
+            else:
+                print("qx")
+                sys.exit(1)
+            if q[1] == _q[1]:
+                pass
+            else:
+                print("qy")
+                sys.exit(1)
+            if t[0] == _t[0]:
+                pass
+            else:
+                print("tx")
+                sys.exit(1)
+            if t[1] == _t[1]:
+                pass
+            else:
+                print("ty")
+                sys.exit(1)
+            if _q[1] == _t[1]:
+                print("qとty")
+                sys.exit(1)
+            if _q[0] == _t[0]:
+                print("qとtx")
+                sys.exit(1)
+            if not p[0].pt[0] == _p[0].pt[0] or not p[0].pt[1] == _p[0].pt[1]:
+                print("キーポイント")
+                sys.exit(1)
+            else:
+                pass
+            if not p[1].pt[0] == _p[1].pt[0] or not p[1].pt[1] == _p[1].pt[1]:
+                print("キーポイント")
+                sys.exit(1)
+            else:
+                pass
     with splta.Timer('estimation'):
         Hs, statuses, pairs = splta.calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs, median=median)
     joblib.dump(Hs, os.path.join(dump_match_testcase_dir, 'Hs.pikle'), compress=True)
