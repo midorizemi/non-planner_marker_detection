@@ -1,6 +1,6 @@
 # python
 
-from make_database import split_affinesim as splta
+from make_database import split_affinesim_combinable as splta
 from commons.my_common import format4pickle_pairs
 import os
 
@@ -53,15 +53,16 @@ if __name__ == '__main__':
               + ' Execute makedb/make_split_combine_featureDB_from_templates.py')
         with splta.Timer('Detection and dividing'):
             splt_kpQ, splt_descQ = splta.affine_detect_into_mesh(detector, temp_inf.get_splitnum(),
-                                                                 imgQ, simu_param='asift')
+                                                                imgQ, simu_param='default')
 
-    mesh_k_num = splta.np.array([len(keypoints) for keypoints in splt_kpQ]).reshape(temp_inf.get_mesh_shape())
-    median = splta.np.nanmedian(mesh_k_num)
+    m_skQ, m_sdQ, m_k_num, merged_map = splta.combine_mesh_compact(splt_kpQ, splt_descQ, temp_inf)
+    list_merged_mesh_id = list(set(splta.np.ravel(merged_map)))
+    median = splta.np.nanmedian(m_k_num)
 
     # 実験用出力先パスの生成
     expt_path = splta.myfm.setup_expt_directory(os.path.basename(__file__))
     expt_name = os.path.basename(expt_path)
-    testset_name = os.path.basename(testset_dir_full)
+    testset_name = os.path.basename(os.path.dirname(fn2_full))
     output_dir = splta.myfm.setup_output_directory(expt_name, testset_name)
     detected_dir = splta.myfm.setup_output_directory(output_dir, 'detected_mesh')
     line_dir = splta.myfm.setup_output_directory(output_dir, 'dmesh_line')
@@ -80,8 +81,9 @@ if __name__ == '__main__':
         kpT, descT = splta.affine_detect(detector, imgT, pool=pool, simu_param='test')
     print('imgQ - %d features, imgT - %d features' % (splta.count_keypoints(splt_kpQ), len(kpT)))
 
+
     with splta.Timer('matching'):
-        mesh_pQ, mesh_pT, mesh_pairs = splta.match_with_cross(matcher, splt_descQ, splt_kpQ, descT, kpT)
+        mesh_pQ, mesh_pT, mesh_pairs = splta.match_with_cross(matcher, m_sdQ, m_skQ, descT, kpT)
 
     import joblib
     dump_match_testcase_dir = splta.myfm.setup_output_directory(dump_match_dir, fn)
@@ -143,10 +145,12 @@ if __name__ == '__main__':
     with open(os.path.join(dump_match_testcase_dir, 'pairs.pickle'), 'wb') as f:
         pickle.dump(index_pairs, f)
 
-    vis = splta.draw_matches_for_meshes(imgQ, imgT, Hs=Hs)
+    vis = splta.draw_matches_for_meshes(imgQ, imgT, temp_inf=temp_inf,
+                                        Hs=Hs, list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
     splta.cv2.imwrite(os.path.join(detected_dir, fn + '.png'), vis)
 
     viw = splta.explore_match_for_meshes('affine find_obj', imgQ, imgT, pairs, Hs=Hs)
 
     splta.cv2.imwrite(os.path.join(line_dir, fn + '.png'), viw)
     splta.cv2.destroyAllWindows()
+

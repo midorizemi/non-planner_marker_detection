@@ -175,7 +175,7 @@ if __name__ == '__main__':
 
     scols = 8
     srows = 8
-    w, h = imgQ.shape[:2]
+    h, w = imgQ.shape[:2]
     template_fn, ext = os.path.splitext(fn1)
     template_information = {"_fn": "tmp.png", "template_img": template_fn,
                             "_cols": w, "_rows": h, "_scols": scols, "_srows": srows, "_nneighbor": 4}

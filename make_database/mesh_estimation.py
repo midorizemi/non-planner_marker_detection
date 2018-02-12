@@ -63,11 +63,12 @@ def is_goodMeshEstimation(corners):
     vect13 = pt3 - pt1
     vect24 = pt4 - pt2
 
-    leng13 = splta.np.linalg.norm(vect13)
-    leng24 = splta.np.linalg.norm(vect24)
+    norm_13MUL24 = splta.np.linalg.norm(vect13) * splta.np.linalg.norm(vect24)
+    if norm_13MUL24 <= 0.1:
+        return False
     co = splta.np.dot(vect13, vect24)
-    sinTheta = splta.np.sin(splta.np.arccos(co/(leng13*leng24)))
-    local_area = leng13*leng24/2*sinTheta
+    sinTheta = splta.np.sin(splta.np.arccos(co/norm_13MUL24))
+    local_area = norm_13MUL24/2*sinTheta
     if not hole_area/2 > local_area or not mesh_area/10 < local_area:
         #質が悪いやつ
         return False
@@ -103,7 +104,7 @@ def draw_matches_for_meshes(imgT, imgQ, Hs=None, vis=None, estimated=None):
         vis[:h1, :w1] = imgT
         vis[:h2, w1:w1 + w2] = imgQ
         vis = splta.cv2.cvtColor(vis, splta.cv2.COLOR_GRAY2BGR)
-    meshes = explm(imgT, Hs)
+    meshes, Hss = explore_meshes(imgT, Hs)
     for corners in meshes:
         if corners is None:
             continue
@@ -125,6 +126,40 @@ def is_detectable(lenmesh, median):
         return True
     else:
         return False
+
+def calculate_centerofgrabity_position(origin, goodvertexes):
+    o_set = splta.np.unique(origin, axis=0).tolist()
+    g_corner = splta.np.empty((0, 2), splta.np.float32)
+    o_corner = splta.np.empty((0, 2), splta.np.float32)
+    for oset in o_set:
+        corner_index = splta.np.where(origin == oset[0])
+        a_ = origin[corner_index[0]]
+        corner_index = splta.np.where(a_ == oset[1])
+        vertexes = goodvertexes[corner_index[0]]
+        if vertexes.shape[0] == 2:
+            v_ = splta.np.array([splta.np.sum(vertexes[:, 0])/2, splta.np.sum(vertexes[:, 1])/2],
+                                splta.np.float32)
+        elif vertexes.shape[0] == 1:
+            v_ = splta.np.float32(vertexes[0])
+        else:
+            v_ = splta.np.array([splta.np.sum(vertexes[:, 0])/3, splta.np.sum(vertexes[:, 1])/3],
+                                splta.np.float32)
+        g_corner = splta.np.append(g_corner, v_.reshape(1, 2), axis=0)
+        v_ = splta.np.array(oset, splta.np.float32)
+        o_corner = splta.np.append(o_corner, v_.reshape(1, 2), axis=0)
+
+    return o_corner, g_corner
+
+
+def extract_mesh_vertexes(neghibors_8):
+    goodid = list(i for i in neghibors_8 if i is not None if map_goodmesh[temp_inf.get_meshid_index(i)])
+    goodvertexes = splta.np.empty((0, 2), splta.np.int32)
+    origin = splta.np.empty((0, 2), splta.np.int32)
+    for gi in goodid:
+        goodvertexes = splta.np.append(goodvertexes, mesh_corners[gi], axis=0)
+        origin = splta.np.append(origin, temp_inf.calculate_mesh_corners(gi), axis=0)
+
+    return origin, goodvertexes
 
 
 if __name__ == '__main__':
@@ -160,7 +195,7 @@ if __name__ == '__main__':
 
     scols = 8
     srows = 8
-    w, h = imgQ.shape[:2]
+    h, w = imgQ.shape[:2]
     template_fn, ext = os.path.splitext(os.path.basename(fn1_full))
     template_information = {"_fn": "tmp.png", "template_img": template_fn,
                             "_cols": w, "_rows": h, "_scols": scols, "_srows": srows, "_nneighbor": 4}
@@ -259,7 +294,7 @@ if __name__ == '__main__':
     mesh_corners, good_Hs = explore_meshes(Hs=Hs)
     map_goodmesh = splta.np.array(list(True if corners is not None else False for corners in mesh_corners))
     map_goodmesh = map_goodmesh.reshape(temp_inf.srows, temp_inf.srows)
-    map_mesh= temp_inf.get_mesh_map()
+    map_mesh = temp_inf.get_mesh_map()
     good_area = map_mesh[map_goodmesh].tolist()
     bad = []
     for gi in good_area:
@@ -273,20 +308,19 @@ if __name__ == '__main__':
     while True:
         for bi in bad:
             n8 = temp_inf.get_meshidlist_8neighbor(bi)
-            goodid = list(i for i in n8 if i is not None if map_goodmesh[temp_inf.get_meshid_index(i)])
-            goodvertexes = splta.np.empty(mesh_corners[0].shape, splta.np.int32)
-            origin = splta.np.empty(mesh_corners[0].shape, splta.np.int32)
-            for gi in goodid:
-                goodvertexes = splta.np.append(goodvertexes, mesh_corners[gi], axis=0)
-                origin = splta.np.append(origin, temp_inf.calculate_mesh_corners(gi), axis=0)
-            H, status = splta.cv2.findHomography(origin, goodvertexes, splta.cv2.LMEDS)
+            origin, good_vertexes = extract_mesh_vertexes(n8)
+            o_corner, g_corner = calculate_centerofgrabity_position(origin, good_vertexes)
+            H, status = splta.cv2.findHomography(o_corner, g_corner, splta.cv2.LMEDS)
             if status is not None and not len(status) == 0:
-                print("{0} / {1} = {2:0.3f} inliers/matched=ratio".format(splta.np.sum(status), len(status), splta.np.sum(status)/len(status)))
+                print("{0} / {1} = {2:0.3f} inliers/matched=ratio".format(splta.np.sum(status), len(status),
+                                                                          splta.np.sum(status)/len(status)))
                 # do not draw outliers (there will be a lot of them)
             origin_corners = temp_inf.calculate_mesh_corners(bi)
             if H is not None:
-                corners = splta.np.int32(splta.cv2.perspectiveTransform(origin_corners.reshape(1, -1, 2), H).reshape(-1, 2))
+                corners = splta.np.int32(splta.cv2.perspectiveTransform(origin_corners.reshape(1, -1, 2),
+                                                                        H).reshape(-1, 2))
                 if is_goodMeshEstimation(corners):
+                    estimated.append(bi)
                     mesh_corners[bi] = corners
                     good_Hs[bi] = H
         dab = []
@@ -299,7 +333,6 @@ if __name__ == '__main__':
             dab.extend(tmp)
         dab = list(set(dab))
         dab = sorted(dab)
-        estimated.extend(bad)
         bad=dab
         if(denied_num <= len(bad)):
             break
@@ -313,9 +346,14 @@ if __name__ == '__main__':
     # splta.cv2.waitKey()
 
 
-    viw = draw_matches_for_meshes(imgQ, imgT, Hs=good_Hs,vis=None, estimated=estimated)
+    # viw = draw_matches_for_meshes(imgQ, imgT, Hs=good_Hs,vis=None, estimated=estimated)
+    # viw = draw_matches_for_meshes(imgQ, imgT, Hs=good_Hs, vis=None, estimated=None)
+    # splta.cv2.imshow('test', viw)
+    # splta.cv2.imwrite('goodMesh.png', viw)
+    # splta.cv2.waitKey()
+    viw = splta.draw_matches_for_meshes(imgQ, imgT, Hs=Hs)
     splta.cv2.imshow('test', viw)
-    splta.cv2.imwrite('goodMesh.png', viw)
+    splta.cv2.imwrite('estimated.png', viw)
     splta.cv2.waitKey()
     splta.cv2.destroyAllWindows()
 
