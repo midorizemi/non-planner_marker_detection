@@ -54,7 +54,6 @@ do
             python expt_mesh_interpolation.py --feature=sift $template_full_path $input_file $prf $testset
             #echo "result>>> "$op
             COUNT=$((++COUNT))
-            break
         done
 #        break
     done

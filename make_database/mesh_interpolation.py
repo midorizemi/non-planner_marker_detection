@@ -222,10 +222,6 @@ def interpolate_mesh(_denied_num, _Hs, _temp_inf, output=False, intermediate_dir
     MAX_TRY = 100
     t = 0
     while True:
-        if (_denied_num <= len(bad)):
-            break
-        if (MAX_TRY >= t):
-            break
         for bi in bad:
             n8 = _temp_inf.get_meshidlist_8neighbor(bi)
             origin, good_vertexes = extract_mesh_vertexes(map_goodmesh, n8, mesh_vertexes, _temp_inf)
@@ -251,15 +247,20 @@ def interpolate_mesh(_denied_num, _Hs, _temp_inf, output=False, intermediate_dir
                     g_Hs[bi] = H
         dab = []
         for bi in bad:
-            if mesh_vertexes[bi] is None:
-                dab.append(bi)
-                continue
+            # if mesh_vertexes[bi] is None:
+            #     dab.append(bi)
+            #     continue
             neighbor_list = _temp_inf.get_meshidlist_nneighbor(bi)
             tmp = list(i for i in neighbor_list if i is not None if not map_goodmesh[_temp_inf.get_meshid_index(i)])
             dab.extend(tmp)
         dab = list(set(dab))
         dab = sorted(dab)
         bad = dab
+        if (_denied_num <= len(bad)):
+            break
+        if (MAX_TRY <= t):
+            t += 1
+            break
     estimated_mesh = list(set(estimated_mesh))
     estimated_mesh = sorted(estimated_mesh)
     return mesh_vertexes, g_Hs, estimated_mesh
@@ -269,13 +270,17 @@ def get_nodes_has_positions(*args, mesh_corners):
     n0, n1, n2, n3 = args
     v0, v1, v2, v3 = None, None, None, None
     if n0 is not None:
-        v0 = mesh_corners[n0][0]
+        if mesh_corners[n0] is not None:
+            v0 = mesh_corners[n0][0]
     if n1 is not None:
-        v1 = mesh_corners[n1][1]
+        if mesh_corners[n1] is not None:
+            v1 = mesh_corners[n1][1]
     if n2 is not None:
-        v2 = mesh_corners[n2][2]
+        if mesh_corners[n2] is not None:
+            v2 = mesh_corners[n2][2]
     if n3 is not None:
-        v3 = mesh_corners[n3][3]
+        if mesh_corners[n3] is not None:
+            v3 = mesh_corners[n3][3]
     return v0, v1, v2, v3
 
 def get_nodes_dispersion(*args, imgQ):
@@ -325,9 +330,9 @@ if __name__ == '__main__':
     except:
         dir_path_full = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
         fn1_full = os.path.abspath(os.path.join(dir_path_full, 'data/templates/qrmarker.png'))
-        fn2_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/mltf_qrmarker/057_070-200.png'))
-        testset_dir_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/mltf_qrmarker'))
-        pr = "mltf_"
+        fn2_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/pl_qrmarker/057_070-200.png'))
+        testset_dir_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/pl_qrmarker'))
+        pr = "pl_"
 
     imgQ = splta.cv2.imread(fn1_full, 0)
     detector, matcher = splta.init_feature(feature_name)
