@@ -141,7 +141,7 @@ def dump_matching_result(fn2, testset_full_path):
         pickle.dump(index_mesh_pairs, f)
         f.close()
     # for i, mesh_pair in enumerate(index_mesh_pairs):
-    #     joblib.dump(mesh_pair, os.path.join(dump_match_testcase_dir, "mesh_pairs_{0:02d}.pikle".format(i)),
+    #     joblib.dump(mesh_pair, os.path.join(dump_detected_testcase_dir, "mesh_pairs_{0:02d}.pikle".format(i)),
     #                 compress=True)
 
 

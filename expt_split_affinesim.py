@@ -94,7 +94,7 @@ if __name__ == '__main__':
     with open(os.path.join(dump_match_testcase_dir, 'mesh_pairs.pickle'), 'wb') as f:
         pickle.dump(index_mesh_pairs, f)
         f.close()
-    import make_database.mesh_estimation as mesti
+    import make_database.mesh_interpolation as mesti
     _mesh_pQ, _mesh_pT, _mesh_pairs = mesti.load_pickle_match_with_cross(expt_name, testset_name, fn)
     for mQ, mT, mP, _mQ, _mT, _mP in zip(mesh_pQ, mesh_pT, mesh_pairs, _mesh_pQ, _mesh_pT, _mesh_pairs):
         for q, t, p, _q, _t, _p in zip(mQ, mT, mP, _mQ, _mT, _mP):

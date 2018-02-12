@@ -149,8 +149,6 @@ class TemplateInfo:
                 a[5] = -1
             return a
         return list(map(validate, v_(*a)))
-    def get_nneighbor(self, id, mesh_map=None):
-        pass
 
     def get_mesh_recanglarvertex_list(self, list_id):
         list_mesh_vertex = []
@@ -158,9 +156,44 @@ class TemplateInfo:
             list_mesh_vertex.append(self.calculate_mesh_corners(id))
         return list_mesh_vertex
 
+    def get_nodes(self):
+        return list(int(i) for i in range((self.srows + 1)*(self.scols + 1)))
 
-    # def get_mesh_corners(self, list_merged_mesh_id, merged_map):
-    #     merged_map_lists = []
-    #     for id in list_merged_mesh_id:
-    #         merged_map
-    #     pass
+    def get_meshid_list_with_node(self, node_id):
+        node_cols = self.scols + 1
+        x = int(node_id/node_cols)
+        has_meshes = [
+            node_id - x,
+            node_id - x -1,
+            node_id - x - 9,
+            node_id - x - 8
+        ]
+        def validate(x):
+            if x < 0:
+                return None
+            else:
+                return int(x)
+        def v_(*args):
+            a = list(args)
+            if int(node_id/node_cols) == 0:
+                #上辺
+                a[2] = -1
+                a[3] = -1
+            if int(node_id%node_cols) == 0:
+                #左辺
+                a[2] = -1
+                a[1] = -1
+            if int(node_id/node_cols) == self.srows:
+                #下辺
+                a[0] = -1
+                a[1] = -1
+            if int(node_id%node_cols) == self.scols:
+                #右辺
+                a[0] = -1
+                a[3] = -1
+            return a
+        return list(map(validate, v_(*has_meshes)))
+
+    def get_nodes_has_meshes_id(self):
+        nodes = self.get_nodes()
+        return list(self.get_meshid_list_with_node(node) for node in nodes)
