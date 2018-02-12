@@ -225,6 +225,9 @@ def interpolate_mesh(_denied_num, _Hs, _temp_inf, output=False, intermediate_dir
         for bi in bad:
             n8 = _temp_inf.get_meshidlist_8neighbor(bi)
             origin, good_vertexes = extract_mesh_vertexes(map_goodmesh, n8, mesh_vertexes, _temp_inf)
+            if origin.shape[0] == 0:
+                print("条件を満たすメッシュがありません")
+                continue
             o_corner, g_corner = calculate_centerofgrabity_position(origin, good_vertexes)
 
             if output:
@@ -259,8 +262,8 @@ def interpolate_mesh(_denied_num, _Hs, _temp_inf, output=False, intermediate_dir
         if (_denied_num <= len(bad)):
             break
         if (MAX_TRY <= t):
-            t += 1
             break
+        t += 1
     estimated_mesh = list(set(estimated_mesh))
     estimated_mesh = sorted(estimated_mesh)
     return mesh_vertexes, g_Hs, estimated_mesh
@@ -330,8 +333,8 @@ if __name__ == '__main__':
     except:
         dir_path_full = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
         fn1_full = os.path.abspath(os.path.join(dir_path_full, 'data/templates/qrmarker.png'))
-        fn2_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/pl_qrmarker/057_070-200.png'))
-        testset_dir_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/pl_qrmarker'))
+        fn2_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/mltf_qrmarker/285_010-320.png'))
+        testset_dir_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/mltf_qrmarker'))
         pr = "pl_"
 
     imgQ = splta.cv2.imread(fn1_full, 0)
