@@ -219,7 +219,13 @@ def interpolate_mesh(_denied_num, _Hs, _temp_inf, output=False, intermediate_dir
     bad = list(set(bad))
     bad = sorted(bad)
     estimated_mesh = []
+    MAX_TRY = 100
+    t = 0
     while True:
+        if (_denied_num <= len(bad)):
+            break
+        if (MAX_TRY >= t):
+            break
         for bi in bad:
             n8 = _temp_inf.get_meshidlist_8neighbor(bi)
             origin, good_vertexes = extract_mesh_vertexes(map_goodmesh, n8, mesh_vertexes, _temp_inf)
@@ -254,8 +260,6 @@ def interpolate_mesh(_denied_num, _Hs, _temp_inf, output=False, intermediate_dir
         dab = list(set(dab))
         dab = sorted(dab)
         bad = dab
-        if (_denied_num <= len(bad)):
-            break
     estimated_mesh = list(set(estimated_mesh))
     estimated_mesh = sorted(estimated_mesh)
     return mesh_vertexes, g_Hs, estimated_mesh
@@ -274,7 +278,7 @@ def get_nodes_has_positions(*args, mesh_corners):
         v3 = mesh_corners[n3][3]
     return v0, v1, v2, v3
 
-def get_nodes_dispersion(*args):
+def get_nodes_dispersion(*args, imgQ):
     v0, v1, v2, v3 = args
     l01, l02, l03, l12, l13, l23 = 0, 0, 0, 0, 0, 0
     p = 0
@@ -417,5 +421,5 @@ if __name__ == '__main__':
 
     nodes_has_meshes = temp_inf.get_nodes_has_meshes_id()
     nodes_has_posisions = list(get_nodes_has_positions(*m, mesh_corners=mesh_corners) for m in nodes_has_meshes)
-    nodes_dispersion = list(get_nodes_dispersion(*vs) for vs in nodes_has_posisions)
+    nodes_dispersion = list(get_nodes_dispersion(*vs, imgQ=imgQ) for vs in nodes_has_posisions)
     print(nodes_dispersion)

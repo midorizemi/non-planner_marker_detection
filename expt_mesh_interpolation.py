@@ -145,7 +145,7 @@ if __name__ == '__main__':
 
     nodes_has_meshes = temp_inf.get_nodes_has_meshes_id()
     nodes_has_posisions = list(m_in.get_nodes_has_positions(*m, mesh_corners=mesh_corners) for m in nodes_has_meshes)
-    nodes_dispersion = list(m_in.get_nodes_dispersion(*vs) for vs in nodes_has_posisions)
+    nodes_dispersion = list(m_in.get_nodes_dispersion(*vs, imgQ=imgQ) for vs in nodes_has_posisions)
     joblib.dump(nodes_has_posisions, os.path.join(dump_detected_testcase_dir, 'nodes_positions.pikle'), compress=True)
     joblib.dump(nodes_dispersion, os.path.join(dump_detected_testcase_dir, 'nodes_dispersion.pikle'), compress=True)
 
