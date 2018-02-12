@@ -134,8 +134,8 @@ def calculate_centerofgrabity_position(origin, goodvertexes):
     for oset in o_set:
         corner_index = splta.np.where(origin == oset[0])
         a_ = origin[corner_index[0]]
-        corner_index = splta.np.where(a_ == oset[1])
-        vertexes = goodvertexes[corner_index[0]]
+        a_index = splta.np.where(a_ == oset[1])
+        vertexes = goodvertexes[corner_index[0][a_index[0]]]
         if vertexes.shape[0] == 2:
             v_ = splta.np.array([splta.np.sum(vertexes[:, 0])/2, splta.np.sum(vertexes[:, 1])/2],
                                 splta.np.float32)
@@ -160,6 +160,33 @@ def extract_mesh_vertexes(neghibors_8):
         origin = splta.np.append(origin, temp_inf.calculate_mesh_corners(gi), axis=0)
 
     return origin, goodvertexes
+
+
+def test_bug_out_img():
+    global gi
+    h1, w1 = imgQ.shape[:2]
+    h2, w2 = imgT.shape[:2]
+    vis = splta.np.zeros((max(h1, h2), w1 + w2), splta.np.uint8)
+    vis[:h1, :w1] = imgQ
+    vis[:h2, w1:w1 + w2] = imgT
+    vis = splta.cv2.cvtColor(vis, splta.cv2.COLOR_GRAY2BGR)
+    for i in range(origin.shape[0]):
+        splta.cv2.arrowedLine(vis, tuple(splta.np.int32(origin[i]).tolist()),
+                              tuple(splta.np.int32(good_vertexes[i] + (w1, 0)).tolist()), (0, 190, 255), thickness=2)
+    goodid = list(i for i in n8 if i is not None if map_goodmesh[temp_inf.get_meshid_index(i)])
+    for gi in goodid:
+        c = mesh_corners[gi] + (w1, 0)
+        oc = splta.np.int32(temp_inf.calculate_mesh_corners(gi))
+        splta.cv2.polylines(vis, [c], True, (0, 255, 0), thickness=3, lineType=splta.cv2.LINE_AA)
+        splta.cv2.polylines(vis, [oc], True, (0, 0, 255), thickness=3, lineType=splta.cv2.LINE_AA)
+    for i in range(o_corner.shape[0]):
+        splta.cv2.circle(vis, tuple(splta.np.int32(o_corner[i]).tolist()), 3, (255, 255, 0), thickness=-1)
+        splta.cv2.circle(vis, tuple(splta.np.int32(g_corner[i] + (w1, 0)).tolist()), 3, (255, 255, 0), thickness=-1)
+        splta.cv2.arrowedLine(vis, tuple(splta.np.int32(o_corner[i]).tolist()),
+                              tuple(splta.np.int32(g_corner[i] + (w1, 0)).tolist()), (255, 0, 0), thickness=2, tipLength=0.05)
+    splta.cv2.imwrite('test_{}.png'.format(bi), vis)
+    splta.cv2.waitKey(1)
+    splta.cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
@@ -310,6 +337,8 @@ if __name__ == '__main__':
             n8 = temp_inf.get_meshidlist_8neighbor(bi)
             origin, good_vertexes = extract_mesh_vertexes(n8)
             o_corner, g_corner = calculate_centerofgrabity_position(origin, good_vertexes)
+
+            # test_bug_out_img()
             H, status = splta.cv2.findHomography(o_corner, g_corner, splta.cv2.LMEDS)
             if status is not None and not len(status) == 0:
                 print("{0} / {1} = {2:0.3f} inliers/matched=ratio".format(splta.np.sum(status), len(status),
@@ -346,14 +375,14 @@ if __name__ == '__main__':
     # splta.cv2.waitKey()
 
 
-    # viw = draw_matches_for_meshes(imgQ, imgT, Hs=good_Hs,vis=None, estimated=estimated)
+    viw = draw_matches_for_meshes(imgQ, imgT, Hs=good_Hs,vis=None, estimated=estimated)
     # viw = draw_matches_for_meshes(imgQ, imgT, Hs=good_Hs, vis=None, estimated=None)
-    # splta.cv2.imshow('test', viw)
-    # splta.cv2.imwrite('goodMesh.png', viw)
-    # splta.cv2.waitKey()
-    viw = splta.draw_matches_for_meshes(imgQ, imgT, Hs=Hs)
     splta.cv2.imshow('test', viw)
-    splta.cv2.imwrite('estimated.png', viw)
+    splta.cv2.imwrite('goodMesh.png', viw)
     splta.cv2.waitKey()
+    # viw = splta.draw_matches_for_meshes(imgQ, imgT, Hs=Hs)
+    # splta.cv2.imshow('test', viw)
+    # splta.cv2.imwrite('estimated.png', viw)
+    # splta.cv2.waitKey()
     splta.cv2.destroyAllWindows()
 
