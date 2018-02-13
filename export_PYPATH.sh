@@ -1,3 +1,3 @@
 #!/bin/zsh
-export PYTHONPATH="${HOME}/PycharmProjects/makeDB/commons:${HOME}/PycharmProjects/makeDB:$PYTHONPATH"
-export PYTHON_PATH="${HOME}/PycharmProjects/makeDB/commons:${HOME}/PycharmProjects/makeDB:$PYTHON_PATH"
+export PYTHONPATH="${HOME}/PycharmProjects/makedb/commons:${HOME}/PycharmProjects/makedb:$PYTHONPATH"
+export PYTHON_PATH="${HOME}/PycharmProjects/makedb/commons:${HOME}/PycharmProjects/makedb:$PYTHON_PATH"
