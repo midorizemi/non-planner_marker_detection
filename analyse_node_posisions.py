@@ -178,7 +178,7 @@ if __name__ == "__main__":
     ax4.set_xticks(df.index)
     ax4.set_xticklabels(df.testcase)
     ax4.set_ylabel("Estimated mesh number")
-    ax3.set_xlabel("camera position No._Lon.-Lat.")
+    ax4.set_xlabel("camera position No._Lon.-Lat.")
     fig4 = ax4.get_figure()
     fig4.tight_layout()
     fig4.savefig(os.path.join(output_dir_plot, "Numbers.png"))
