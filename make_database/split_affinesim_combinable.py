@@ -33,42 +33,11 @@ from commons.template_info import TemplateInfo as TmpInf
 from commons.custom_find_obj import filter_matches_wcross as c_filter
 from commons.custom_find_obj import calclate_Homography4splitmesh
 from commons import my_file_path_manager as myfm
-
-
-def split_kd(keypoints, descrs, splt_num):
-    tmp = TmpInf()
-    split_tmp_img = tmp.make_splitmap()
-    assert isinstance(split_tmp_img, np.ndarray)
-    global descrs_list
-    if isinstance(descrs, np.ndarray):
-        descrs_list = descrs.tolist()
-    splits_k = [[] for row in range(splt_num)]
-    splits_d = [[] for row in range(splt_num)]
-
-    assert isinstance(keypoints, list)
-    assert isinstance(descrs_list, list)
-    for keypoint, descr in zip(keypoints, descrs_list):
-        x, y = np.int32(keypoint.pt)
-        if x < 0 or x >= 800:
-            if x < 0:
-                x = 0
-            else:
-                x = 799
-        if y < 0 or y >= 600:
-            if y < 0:
-                y = 0
-            else:
-                y = 599
-        splits_k[split_tmp_img[y, x][0]].append(keypoint)
-        splits_d[split_tmp_img[y, x][0]].append(descr)
-
-    for i, split_d in enumerate(splits_d):
-        if len(splits_k[i]) == len(splits_d):
-            sys.exit(1)
-        splits_d[i] = np.array(split_d, dtype=np.float32)
-
-    return splits_k, splits_d
-
+from make_database.split_affinesim import split_kd
+from make_database.split_affinesim import affine_detect_into_mesh
+from make_database.split_affinesim import affine_load_into_mesh
+from make_database.split_affinesim import match_with_cross
+from make_database.split_affinesim import count_keypoints
 
 def combine_mesh(splt_k, splt_d, temp_inf):
     """
@@ -141,59 +110,8 @@ def combine_mesh_compact(splt_k, splt_d, temp_inf):
     m_sd = compact_merged_splt(sd)
     return m_sk, m_sd, mesh_k_num, merged_map
 
-
 def compact_merged_splt(m_s):
     return [x for x in m_s if x is not None]
-
-
-def affine_detect_into_mesh(detector, split_num, img1, mask=None, simu_param='default'):
-    pool = ThreadPool(processes=cv2.getNumberOfCPUs())
-    kp, desc = affine_detect(detector, img1, mask, pool=pool, simu_param=simu_param)
-    return split_kd(kp, desc, split_num)
-
-
-def affine_load_into_mesh(template_fn, splt_num):
-    pikle_path = myfm.get_pikle_path(template_fn)
-    if not os.path.exists(pikle_path):
-        print('Not found {}'.format(pikle_path))
-        raise ValueError('Failed to load pikle:', pikle_path)
-    kp, des = load_pikle(pikle_path)
-    return split_kd(kp, des, splt_num)
-
-
-def match_with_cross(matcher, meshList_descQ, meshList_kpQ, descT, kpT):
-    meshList_pQ = []
-    meshList_pT = []
-    meshList_pairs = []
-    for mesh_kpQ, mesh_descQ in zip(meshList_kpQ, meshList_descQ):
-        raw_matchesQT = matcher.knnMatch(mesh_descQ, trainDescriptors=descT, k=2)
-        raw_matchesTQ = matcher.knnMatch(descT, trainDescriptors=mesh_descQ, k=2)
-        pQ, pT, pairs = c_filter(mesh_kpQ, kpT, raw_matchesQT, raw_matchesTQ)
-        meshList_pT.append(pT)
-        meshList_pQ.append(pQ)
-        meshList_pairs.append(pairs)
-    return meshList_pQ, meshList_pT, meshList_pairs
-
-
-def count_keypoints(splt_kpQ):
-    len_s_kp = 0
-    for kps in splt_kpQ:
-        if kps is not None:
-            len_s_kp += len(kps)
-    return len_s_kp
-
-
-def merge_rule(id, mean, mesh_k_num, temp_inf):
-    """
-    #TODO
-    何かしらのマージルール
-    特徴点数とか，分布とか，特徴量とかでマージが必要なメッシュかをかをはんていする
-    :type mesh_k_num :np.ndarray
-    """
-
-    if mean > mesh_k_num[temp_inf.get_meshid_index(id)]:
-        pass
-
 
 def analysis_num(mesh_k_num):
     # 分析１：特徴点数のバラつき
@@ -352,7 +270,6 @@ if __name__ == '__main__':
     print(__doc__)
 
     import sys, getopt
-
     opts, args = getopt.getopt(sys.argv[1:], '', ['feature='])
     opts = dict(opts)
     feature_name = opts.get('--feature', 'sift')
@@ -360,12 +277,9 @@ if __name__ == '__main__':
         fn1, fn2 = args
     except:
         import os
-
         dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
-        fn1 = os.path.abspath(os.path.join(dir, 'data/templates/menko.png'))
-        # fn2 = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
-        # fn2 = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/unittest/011_080-100.png'))
-        fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/219_020-020.png'))
+        fn1 = os.path.abspath(os.path.join(dir, 'data/templates/qrmarker.png'))
+        fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
 
     imgQ = cv2.imread(fn1, 0)
     imgT = cv2.imread(fn2, 0)
@@ -410,7 +324,6 @@ if __name__ == '__main__':
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
     with Timer('Detection'):
         kpT, descT = affine_detect(detector, imgT, pool=pool, simu_param='test')
-    print('imgQ - %d features, imgT - %d features' % (count_keypoints(splt_kpQ), len(kpT)))
 
     with Timer('matching'):
         mesh_pQ, mesh_pT, mesh_pairs = match_with_cross(matcher, m_sdQ, m_skQ, descT, kpT)

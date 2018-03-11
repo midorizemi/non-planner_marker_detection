@@ -1,6 +1,7 @@
 # python
 
 from make_database import split_affinesim_combinable as splta
+from commons.custom_find_obj import explore_match_for_meshes
 from commons.my_common import format4pickle_pairs
 import os
 
@@ -18,7 +19,7 @@ if __name__ == '__main__':
     except:
         dir_path_full = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
         fn1_full = os.path.abspath(os.path.join(dir_path_full, 'data/templates/qrmarker.png'))
-        fn2_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/mltf_qrmarker/057_070-200.png'))
+        fn2_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/mltf_qrmarker/000_090-000.png'))
         testset_dir_full = os.path.abspath(os.path.join(dir_path_full, 'data/inputs/cgs/mltf_qrmarker'))
         pr = "mltf_"
 
@@ -79,7 +80,6 @@ if __name__ == '__main__':
     pool = splta.ThreadPool(processes=splta.cv2.getNumberOfCPUs())
     with splta.Timer('Detection'):
         kpT, descT = splta.affine_detect(detector, imgT, pool=pool, simu_param='test')
-    print('imgQ - %d features, imgT - %d features' % (splta.count_keypoints(splt_kpQ), len(kpT)))
 
 
     with splta.Timer('matching'):
@@ -149,7 +149,7 @@ if __name__ == '__main__':
                                         Hs=Hs, list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
     splta.cv2.imwrite(os.path.join(detected_dir, fn + '.png'), vis)
 
-    viw = splta.explore_match_for_meshes('affine find_obj', imgQ, imgT, pairs, Hs=Hs)
+    viw = explore_match_for_meshes('affine find_obj', imgQ, imgT, pairs, Hs=Hs)
 
     splta.cv2.imwrite(os.path.join(line_dir, fn + '.png'), viw)
     splta.cv2.destroyAllWindows()
