@@ -35,7 +35,7 @@ def get_split_keypoint_detector(_template_fn, _temp_inf, _detector, _imgQ):
             splt_kpQ, splt_descQ = splta.affine_load_into_mesh(_template_fn, _temp_inf.get_splitnum())
     except ValueError as e:
         print(e.args)
-        print('If you need to save {} to file as datavase. ¥n'
+        print('If you need to save {} to file as datavase. \n'
               + ' Execute makedb/make_split_combine_featureDB_from_templates.py')
         with splta.Timer('Detection and dividing'):
             splt_kpQ, splt_descQ = splta.affine_detect_into_mesh(_detector, _temp_inf.get_splitnum(),

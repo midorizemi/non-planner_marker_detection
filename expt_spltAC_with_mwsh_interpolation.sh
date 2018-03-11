@@ -12,8 +12,8 @@ export PYTHON_PATH="${DIR}/makedb/commons:${DIR}/makedb/make_database:$PYTHON_PA
 alias activate="source $PYENV_ROOT/versions/anaconda3-5.0.0/bin/activate"
 alias deactivate="source $PYENV_ROOT/versions/anaconda3-5.0.0/bin/deactivate"
 
-source activate py36cv3
-#activate py36cv34
+#source activate py36cv3
+source activate py36cv34
 
 PROCJECT_DIR="$( cd "$( dirname "${DIR}" )" && pwd )"
 echo $PROJECT_DIR
@@ -51,7 +51,8 @@ do
 
             #op=$(python expt_split_affinesim.py "${template_full_path} ${input_file} ${prf} ${testset} --feature sift" | tail -n 1 >&1)
             #exec python "expt_split_affinesim.py" "${template_full_path}" $"{input_file}" "${prf}" "${testset}" "--feature sift"
-            python expt_split_affinesim_cobinable_interpolation.py --feature=sift $template_full_path $input_file $prf $testset
+
+            python expt_split_affinesim_combinable_interporation.py --feature=sift $template_full_path $input_file $prf $testset
             #echo "result>>> "$op
             COUNT=$((++COUNT))
         done
