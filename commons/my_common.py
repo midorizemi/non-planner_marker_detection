@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from commons.common import clock
 from logging import getLogger
 import cv2
+import numpy as np
 import os
 import pickle
 
@@ -143,3 +144,13 @@ def loader(which_one, fn, matchnum=None):
     if which_one is 'meshed_matched_pairs':
         #matched keypoint list
         return load_pickle_mesh_matchepairs(fn, matchnum)
+
+def gamma_conversion(img):
+    gamma = 2.0
+    look_up_table = np.ones((256, 1), dtype='uint8') * 0
+    for i in range(256):
+        look_up_table[i][0] = 255 * pow(float(i) / 255, 1.0 / gamma)
+
+    img_gamma = cv2.LUT(img, look_up_table)
+
+    return img_gamma

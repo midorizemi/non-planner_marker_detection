@@ -10,11 +10,24 @@ def load_pickle_match_with_cross(expt_name, testset_name, fn):
     dump_match_dir = splta.myfm.setup_output_directory(output_dir, 'dump_match_dir')
     dump_match_testcase_dir = splta.myfm.setup_output_directory(dump_match_dir, fn)
     import joblib
-    mesh_pQ = joblib.load(os.path.join(dump_match_testcase_dir, 'mesH_pQ.pikle'))
-    mesh_pT = joblib.load(os.path.join(dump_match_testcase_dir, 'mesH_pT.pikle'))
+    import traceback
+    try:
+        mesh_pQ = joblib.load(os.path.join(dump_match_testcase_dir, 'mesH_pQ.pikle'))
+    except:
+        traceback.print_exc()
+        raise
+    try:
+        mesh_pT = joblib.load(os.path.join(dump_match_testcase_dir, 'mesH_pT.pikle'))
+    except:
+        traceback.print_exc()
+        raise
     each_mesh_matchnum = list(len(mesh) for mesh in mesh_pQ)
-    mesh_pairs = load_pickle_mesh_matchepairs(os.path.join(dump_match_testcase_dir, 'mesh_pairs.pickle'),
+    try:
+        mesh_pairs = load_pickle_mesh_matchepairs(os.path.join(dump_match_testcase_dir, 'mesh_pairs.pickle'),
                                               each_mesh_matchnum)
+    except:
+        traceback.print_exc()
+        raise
     return mesh_pQ, mesh_pT, mesh_pairs
 
 
@@ -57,6 +70,8 @@ def explore_meshes(imgT=None, Hs=None, temp_inf=None):
 
 
 def is_goodMeshEstimation(corners, temp_inf):
+    if not len(corners) == 4:
+        return False
     hole_area = temp_inf.cols * temp_inf.rows
     mesh_area = temp_inf.offset_c * temp_inf.offset_r
     pt1 = corners[0]
@@ -67,12 +82,12 @@ def is_goodMeshEstimation(corners, temp_inf):
     vect24 = pt4 - pt2
 
     norm_13MUL24 = splta.np.linalg.norm(vect13) * splta.np.linalg.norm(vect24)
-    if norm_13MUL24 <= 0.1:
+    if norm_13MUL24 <= 0.9:
         return False
     co = splta.np.dot(vect13, vect24)
     sinTheta = splta.np.sin(splta.np.arccos(co / norm_13MUL24))
     local_area = norm_13MUL24 / 2 * sinTheta
-    if not hole_area / 2 > local_area or not mesh_area / 10 < local_area:
+    if not hole_area / 3 > local_area or not mesh_area / 10 < local_area or not local_area / hole_area > 0.005:
         # 質が悪いやつ
         return False
 
@@ -105,6 +120,14 @@ def is_goodMeshEstimation(corners, temp_inf):
         return False
     if not is_cross(pt1, pt3, pt4, pt2):
         return False
+
+    # vis = splta.np.zeros((300, 300), splta.np.uint8)
+    # vis = splta.cv2.cvtColor(vis, splta.cv2.COLOR_GRAY2BGR)
+    # c = splta.np.int32(list(map(lambda x: x * (0.1, 0.1) + (100, 100), corners)))
+    # splta.cv2.polylines(vis, [c], True, (0, 255, 255), thickness=3, lineType=splta.cv2.LINE_AA)
+    # splta.cv2.imshow('debug', vis)
+    # splta.cv2.waitKey(100)
+
     return True
 
 
@@ -120,10 +143,10 @@ def draw_matches_for_meshes(imgT, imgQ, Hs=None, vis=None, estimated=None):
     for corners in meshes:
         if corners is None:
             continue
-        splta.cv2.polylines(vis, [corners], True, (255, 255, 0), thickness=3, lineType=splta.cv2.LINE_AA)
+        splta.cv2.polylines(vis, [corners], True, (0, 255, 255), thickness=3, lineType=splta.cv2.LINE_AA)
     if estimated is not None:
         for e in estimated:
-            splta.cv2.polylines(vis, [meshes[e]], True, (10, 100, 255), thickness=3, lineType=splta.cv2.LINE_AA)
+            splta.cv2.polylines(vis, [meshes[e]], True, (38, 163, 233), thickness=3, lineType=splta.cv2.LINE_AA)
 
     return vis
 
@@ -185,20 +208,20 @@ def test_bug_out_img(imgQ, imgT, temp_inf, mesh_corners,
     vis[:h1, :w1] = imgQ
     vis[:h2, w1:w1 + w2] = imgT
     vis = splta.cv2.cvtColor(vis, splta.cv2.COLOR_GRAY2BGR)
-    for i in range(origin.shape[0]):
-        splta.cv2.arrowedLine(vis, tuple(splta.np.int32(origin[i].tolist())),
-                              tuple(splta.np.int32(good_vertexes[i] + (w1, 0)).tolist()), (0, 190, 255), thickness=2)
+    # for i in range(origin.shape[0]):
+    #     splta.cv2.arrowedLine(vis, tuple(splta.np.int32(origin[i].tolist())),
+    #                           tuple(splta.np.int32(good_vertexes[i] + (w1, 0)).tolist()), (0, 190, 255), thickness=2)
     goodid = list(i for i in n8 if i is not None if map_goodmesh[temp_inf.get_meshid_index(i)])
     for gi in goodid:
         c = mesh_corners[gi] + (w1, 0)
         oc = splta.np.int32(temp_inf.calculate_mesh_corners(gi))
-        splta.cv2.polylines(vis, [c], True, (0, 255, 0), thickness=3, lineType=splta.cv2.LINE_AA)
-        splta.cv2.polylines(vis, [oc], True, (0, 0, 255), thickness=3, lineType=splta.cv2.LINE_AA)
+        splta.cv2.polylines(vis, [c], True, (0, 255, 0), thickness=4, lineType=splta.cv2.LINE_AA)
+        splta.cv2.polylines(vis, [oc], True, (0, 0, 255), thickness=5, lineType=splta.cv2.LINE_AA)
     for i in range(o_corner.shape[0]):
         splta.cv2.circle(vis, tuple(splta.np.int32(o_corner[i].tolist())), 3, (255, 255, 0), thickness=-1)
         splta.cv2.circle(vis, tuple(splta.np.int32(g_corner[i] + (w1, 0)).tolist()), 3, (255, 255, 0), thickness=-1)
         splta.cv2.arrowedLine(vis, tuple(splta.np.int32(o_corner[i].tolist())),
-                              tuple(splta.np.int32(g_corner[i] + (w1, 0)).tolist()), (255, 0, 0), thickness=2,
+                              tuple(splta.np.int32(g_corner[i] + (w1, 0)).tolist()), (255, 204, 0), thickness=3,
                               tipLength=0.05)
     splta.cv2.imwrite(os.path.join(intermediate_dir, 'points_{}.png'.format(bi)), vis)
     splta.cv2.waitKey(1)
