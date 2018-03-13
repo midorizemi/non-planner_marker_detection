@@ -146,7 +146,7 @@ def draw_matches_for_meshes(imgT, imgQ, Hs=None, vis=None, estimated=None):
         splta.cv2.polylines(vis, [corners], True, (0, 255, 255), thickness=3, lineType=splta.cv2.LINE_AA)
     if estimated is not None:
         for e in estimated:
-            splta.cv2.polylines(vis, [meshes[e]], True, (38, 163, 233), thickness=3, lineType=splta.cv2.LINE_AA)
+            splta.cv2.polylines(vis, [meshes[e]], True, (0, 0, 255), thickness=3, lineType=splta.cv2.LINE_AA)
 
     return vis
 

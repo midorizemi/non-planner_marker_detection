@@ -116,7 +116,7 @@ def explore_meshes(imgT, Hs=None):
     return meshes
 
 
-def draw_matches_for_meshes(imgT, imgQ, Hs=None, vis=None):
+def draw_matches_for_meshes(imgT, imgQ, Hs=None, vis=None, color=(0, 255, 255)):
     h1, w1 = imgT.shape[:2]
     h2, w2 = imgQ.shape[:2]
     if vis is None:
@@ -126,7 +126,7 @@ def draw_matches_for_meshes(imgT, imgQ, Hs=None, vis=None):
         vis = cv2.cvtColor(vis, cv2.COLOR_GRAY2BGR)
     meshes = explore_meshes(imgT, Hs)
     for mesh_corners in meshes:
-        cv2.polylines(vis, [mesh_corners], True, (0, 255, 255), thickness=4, lineType=cv2.LINE_AA)
+        cv2.polylines(vis, [mesh_corners], True, color, thickness=7, lineType=cv2.LINE_AA)
 
     return vis
 

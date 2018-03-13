@@ -44,7 +44,7 @@ def get_matched_points(dumped_exdir, testset_name, fn, sdscQ, skpQ, dscT, kpT):
     try:
         with splta.Timer('Loarding matching pickle'):
             mesh_pQ, mesh_pT, mesh_pairs = m_in.load_pickle_match_with_cross(dumped_exdir, testset_name, fn)
-            # mesh_pQ, mesh_pT, mesh_pairs = splta.match_with_cross(matcher, splt_descQ, splt_kpQ, descT, kpT)
+            # mesh_pQ, mesh_pT, mesh_pairs = splta_c.match_with_cross(matcher, splt_descQ, splt_kpQ, descT, kpT)
     except:
         print('Failed Load matching result')
         with splta.Timer('matching'):
@@ -56,7 +56,7 @@ def get_homographies(dumped_exdir, testset_name, fn, mesh_pQ, mesh_pT, mesh_pair
     try:
         with splta.Timer('Loading estimation result'):
             Hs, statuses, pairs = m_in.load_pickle_calclate_Homography4splitmesh(dumped_exdir, testset_name, fn)
-            # Hs, statuses, pairs = splta.calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs, median=median)
+            # Hs, statuses, pairs = splta_c.calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs, median=median)
     except:
         print('Failed loading estimated mesh')
         with splta.Timer('estimation'):
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     fn, ext = os.path.splitext(os.path.basename(fn2_full))
     testset_name = os.path.basename(os.path.dirname(fn2_full))
     dumped_exdir = "expt_split_affinesim"
-    # dumped_exdir = "expt_split_affinesim_conbineble"
+    # dumped_exdir = "expt_split_affinesim_conbine"
     mesh_pQ, mesh_pT, mesh_pairs = get_matched_points(dumped_exdir, testset_name, fn, sdscQ, skpQ, dscT, kpT)
 
     Hs, statuses, pairs = get_homographies(dumped_exdir, testset_name, fn, mesh_pQ, mesh_pT, mesh_pairs)

@@ -144,6 +144,13 @@ if __name__ == '__main__':
     tmp_map, gHs = m_in.explore_meshes(Hs=Hs)
     joblib.dump(gHs, os.path.join(dump_detected_testcase_dir, 'original_good_Hs.pikle'), compress=True)
 
+    # 手法なし検出結果
+    dumped_exdir = "expt_split_affinesim"
+    nm_mesh_pQ, nm_mesh_pT, nm_mesh_pairs = get_matched_points(dumped_exdir, testset_name, fn, sdscQ, skpQ, dscT, kpT)
+    nm_Hs, nm_statuses, nm_pairs = get_homographies(dumped_exdir, testset_name, fn, nm_mesh_pQ, nm_mesh_pT, nm_mesh_pairs)
+    joblib.dump(nm_Hs, os.path.join(dump_detected_testcase_dir, 'non_method_Hs.pikle'), compress=True)
+    nm_map, nm_gHs = m_in.explore_meshes(Hs=Hs)
+    joblib.dump(nm_gHs, os.path.join(dump_detected_testcase_dir, 'non_method_good_Hs.pikle'), compress=True)
 
     # 検出不可能メッシュ
     denied_mesh = list(np.count_nonzero(merged_map == list_merged_mesh_id[i]) for i, match in enumerate(mesh_pQ)
@@ -154,6 +161,12 @@ if __name__ == '__main__':
                                                              intermediate_dir=intermediate_testcase_dir,
                                                              imgQ=imgQ, imgT=imgT)
 
+    viw = gamma_conversion(splta.draw_matches_for_meshes(imgQ, imgT, Hs=nm_Hs, color=(0, 255, 127)))
+    splta.cv2.imwrite(os.path.join(detected_dir, 'non_method_' + fn + '.png'), viw)
+    splta.cv2.waitKey(1)
+    viw = gamma_conversion(splta.draw_matches_for_meshes(imgQ, imgT, Hs=nm_gHs, color=(0, 255, 127)))
+    splta.cv2.imwrite(os.path.join(detected_dir, 'non_method_good_' + fn + '.png'), viw)
+    splta.cv2.waitKey(1)
     viw = gamma_conversion(splta.draw_matches_for_meshes(imgQ, imgT, Hs=Hs))
     splta.cv2.imwrite(os.path.join(detected_dir, fn + '.png'), viw)
     splta.cv2.waitKey(1)
@@ -164,7 +177,7 @@ if __name__ == '__main__':
     splta.cv2.imwrite(os.path.join(intp_detected_dir, 'E_' + fn + '.png'), viw)
     splta.cv2.waitKey(1)
     viw = gamma_conversion(m_in.draw_matches_for_meshes(imgQ, imgT, Hs=good_Hs, vis=None, estimated=None))
-    splta.cv2.imwrite(os.path.join(intp_detected_dir, fn + '.png'), viw)
+    splta.cv2.imwrite(os.path.join(intp_detected_dir, 'final_' + fn + '.png'), viw)
     splta.cv2.waitKey(1)
     splta.cv2.destroyAllWindows()
 
