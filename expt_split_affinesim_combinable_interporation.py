@@ -143,6 +143,11 @@ if __name__ == '__main__':
     joblib.dump(Hs, os.path.join(dump_detected_testcase_dir, 'original_Hs.pikle'), compress=True)
     tmp_map, gHs = m_in.explore_meshes(Hs=Hs)
     joblib.dump(gHs, os.path.join(dump_detected_testcase_dir, 'original_good_Hs.pikle'), compress=True)
+    orig_nodes_has_meshes = temp_inf.get_nodes_has_meshes_id()
+    orig_nodes_has_posisions = list(m_in.get_nodes_has_positions(*m, mesh_corners=tmp_map) for m in orig_nodes_has_meshes)
+    orig_nodes_dispersion = list(m_in.get_nodes_dispersion(*vs, imgQ=imgQ) for vs in orig_nodes_has_posisions)
+    joblib.dump(orig_nodes_has_posisions, os.path.join(dump_detected_testcase_dir, 'orig_nodes_positions.pikle'), compress=True)
+    joblib.dump(orig_nodes_dispersion, os.path.join(dump_detected_testcase_dir, 'orig_nodes_dispersion.pikle'), compress=True)
 
     # 手法なし検出結果
     dumped_exdir = "expt_split_affinesim"
@@ -151,6 +156,11 @@ if __name__ == '__main__':
     joblib.dump(nm_Hs, os.path.join(dump_detected_testcase_dir, 'non_method_Hs.pikle'), compress=True)
     nm_map, nm_gHs = m_in.explore_meshes(Hs=Hs)
     joblib.dump(nm_gHs, os.path.join(dump_detected_testcase_dir, 'non_method_good_Hs.pikle'), compress=True)
+    nm_nodes_has_meshes = temp_inf.get_nodes_has_meshes_id()
+    nm_nodes_has_posisions = list(m_in.get_nodes_has_positions(*m, mesh_corners=nm_map) for m in nm_nodes_has_meshes)
+    nm_nodes_dispersion = list(m_in.get_nodes_dispersion(*vs, imgQ=imgQ) for vs in nm_nodes_has_posisions)
+    joblib.dump(nm_nodes_has_posisions, os.path.join(dump_detected_testcase_dir, 'nm_nodes_positions.pikle'), compress=True)
+    joblib.dump(nm_nodes_dispersion, os.path.join(dump_detected_testcase_dir, 'nm_nodes_dispersion.pikle'), compress=True)
 
     # 検出不可能メッシュ
     denied_mesh = list(np.count_nonzero(merged_map == list_merged_mesh_id[i]) for i, match in enumerate(mesh_pQ)
