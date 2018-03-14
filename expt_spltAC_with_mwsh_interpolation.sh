@@ -12,8 +12,8 @@ export PYTHON_PATH="${DIR}/makedb/commons:${DIR}/makedb/make_database:$PYTHON_PA
 alias activate="source $PYENV_ROOT/versions/anaconda3-5.0.0/bin/activate"
 alias deactivate="source $PYENV_ROOT/versions/anaconda3-5.0.0/bin/deactivate"
 
-#source activate py36cv3
-source activate py36cv34
+source activate py36cv3
+#source activate py36cv34
 
 PROCJECT_DIR="$( cd "$( dirname "${DIR}" )" && pwd )"
 echo $PROJECT_DIR

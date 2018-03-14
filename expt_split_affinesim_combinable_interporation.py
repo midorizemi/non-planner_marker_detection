@@ -153,14 +153,14 @@ if __name__ == '__main__':
     dumped_exdir = "expt_split_affinesim"
     nm_mesh_pQ, nm_mesh_pT, nm_mesh_pairs = get_matched_points(dumped_exdir, testset_name, fn, sdscQ, skpQ, dscT, kpT)
     nm_Hs, nm_statuses, nm_pairs = get_homographies(dumped_exdir, testset_name, fn, nm_mesh_pQ, nm_mesh_pT, nm_mesh_pairs)
-    joblib.dump(nm_Hs, os.path.join(dump_detected_testcase_dir, 'non_method_Hs.pikle'), compress=True)
+    joblib.dump(nm_Hs, os.path.join(dump_detected_testcase_dir, 'nonmethod_Hs.pikle'), compress=True)
     nm_map, nm_gHs = m_in.explore_meshes(Hs=nm_Hs)
-    joblib.dump(nm_gHs, os.path.join(dump_detected_testcase_dir, 'non_method_good_Hs.pikle'), compress=True)
+    joblib.dump(nm_gHs, os.path.join(dump_detected_testcase_dir, 'nonmethod_good_Hs.pikle'), compress=True)
     nm_nodes_has_meshes = temp_inf.get_nodes_has_meshes_id()
     nm_nodes_has_posisions = list(m_in.get_nodes_has_positions(*m, mesh_corners=nm_map) for m in nm_nodes_has_meshes)
     nm_nodes_dispersion = list(m_in.get_nodes_dispersion(*vs, imgQ=imgQ) for vs in nm_nodes_has_posisions)
-    joblib.dump(nm_nodes_has_posisions, os.path.join(dump_detected_testcase_dir, 'nm_nodes_positions.pikle'), compress=True)
-    joblib.dump(nm_nodes_dispersion, os.path.join(dump_detected_testcase_dir, 'nm_nodes_dispersion.pikle'), compress=True)
+    joblib.dump(nm_nodes_has_posisions, os.path.join(dump_detected_testcase_dir, 'nonmethod_nodes_positions.pikle'), compress=True)
+    joblib.dump(nm_nodes_dispersion, os.path.join(dump_detected_testcase_dir, 'nonmethod_nodes_dispersion.pikle'), compress=True)
 
     # 検出不可能メッシュ
     denied_mesh = list(np.count_nonzero(merged_map == list_merged_mesh_id[i]) for i, match in enumerate(mesh_pQ)
@@ -193,7 +193,7 @@ if __name__ == '__main__':
 
     joblib.dump(good_Hs, os.path.join(dump_detected_testcase_dir, 'estimated_Hs.pikle'), compress=True)
     joblib.dump(mesh_corners, os.path.join(dump_detected_testcase_dir, 'mesh_corners.pikle'), compress=True)
-    joblib.dump(estimated, os.path.join(dump_detected_testcase_dir, 'mesh_corners.pikle'), compress=True)
+    joblib.dump(estimated, os.path.join(dump_detected_testcase_dir, 'estimated_mesh_id.pikle'), compress=True)
 
     nodes_has_meshes = temp_inf.get_nodes_has_meshes_id()
     nodes_has_posisions = list(m_in.get_nodes_has_positions(*m, mesh_corners=mesh_corners) for m in nodes_has_meshes)
