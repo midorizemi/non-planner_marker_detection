@@ -8,7 +8,10 @@ import joblib
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-plt.tight_layout()
+# from matplotlib import rc
+# plt.tight_layout()
+# rc('font', **{'family':'sans-serif', 'sans-serif':['Helvetica']})
+# rc('text', usetex=True)
 import pandas as pd
 from time import sleep
 import cv2
@@ -36,8 +39,22 @@ def get_testcase_fn(testset_fullpath, sampling_num=0):
         for i, test_case_fn in enumerate(testcase_fns):
             yield test_case_fn
 
+
+def load_nodes_dispersion(file_name='nodes_dispersion.pikle'):
+    global dump_detected_testcase_dir, nodes_dispersion
+    dump_detected_testcase_dir = myfsys.setup_output_directory(dump_detected_dir, fn)
+    nodes_dispersion = joblib.load(os.path.join(dump_detected_testcase_dir, file_name))
+    nodes_dispersion = np.array(list(i if i is not None else np.nan for i in nodes_dispersion), dtype=np.float32)
+    return nodes_dispersion
+
+def mold2Longitude_Latitude(filename):
+    filename = filename.replace('_', '-')
+    tmp = filename.split('-')
+    LoLa = '{0}, {1}'.format(tmp[0], tmp[1])
+    return LoLa
+
 if __name__ == "__main__":
-    expt_path = os.path.join(myfsys.get_dir_full_path_('outputs'), "expt_mesh_interpolation")
+    expt_path = os.path.join(myfsys.get_dir_full_path_('outputs'), "expt_split_affinesim_combinable_interporation")
     detector, matcher = init_feature(emod.Features.SIFT.name)
     column_num = 8
     row_num = 8
@@ -67,64 +84,134 @@ if __name__ == "__main__":
         testcases_fn = get_testcase_fn(testset_full_path, sampling_num=sampling_num)
         means = []
         num = []
+        orig_means = []
+        orig_num = []
+        nm_means = []
+        nm_num = []
         testcase_ticks = []
         for testcase_fn in testcases_fn:
             fn, ext = os.path.splitext(testcase_fn)
-            dump_detected_testcase_dir = myfsys.setup_output_directory(dump_detected_dir, fn)
-            nodes_dispersion = joblib.load(os.path.join(dump_detected_testcase_dir, 'nodes_dispersion.pikle'))
-            nodes_dispersion = np.array(list(i if i is not None else np.nan for i in nodes_dispersion), dtype=np.float32)
-            good_Hs = joblib.load(os.path.join(dump_detected_testcase_dir, 'good_Hs.pikle'))
-            mesh_num = list(True if h is not None else False for h in good_Hs)
+            nodes_dispersion = load_nodes_dispersion('nodes_dispersion.pikle')
+            orig_nodes_dispersion = load_nodes_dispersion('orig_nodes_dispersion.pikle')
+            nm_nodes_dispersion = load_nodes_dispersion('nm_nodes_dispersion.pikle')
+            Hs = joblib.load(os.path.join(dump_detected_testcase_dir, 'estimated_Hs.pikle'))
+            orig_Hs = joblib.load(os.path.join(dump_detected_testcase_dir, 'original_good_Hs.pikle'))
+            nm_Hs = joblib.load(os.path.join(dump_detected_testcase_dir, 'non_method_good_Hs.pikle'))
+            mesh_num = list(True if h is not None else False for h in Hs)
+            orig_mesh_num = list(True if h is not None else False for h in orig_Hs)
+            nm_mesh_num = list(True if h is not None else False for h in nm_Hs)
             means.append(np.nanmean(nodes_dispersion))
+            orig_means.append(np.nanmean(orig_nodes_dispersion))
+            nm_means.append(np.nanmean(nm_nodes_dispersion))
             num.append(sum(mesh_num))
-            testcase_ticks.append(fn)
-
-        df = pd.DataFrame({
-            'position_means': means,
-            'mesh_nums': num,
-            'testcase': testcase_ticks,
-            'testset': testset_name
-        })
+            orig_num.append(sum(orig_mesh_num))
+            nm_num.append(sum(nm_mesh_num))
+            testcase_ticks.append(mold2Longitude_Latitude(fn))
+        dict_columns = {
+            'od': 'our_method-dispersion',
+            'ad': 'adaptive_method-dispersion',
+            'nd': 'nomethod-dispersion',
+            'on': 'our_method-number',
+            'an': 'adaptive_method-number',
+            'nn': 'nomethod-number',
+            'case': 'testcase',
+            'set': 'testset'
+        }
+        df = pd.DataFrame()
+        df[dict_columns['od']] = means
+        df[dict_columns['ad']] = orig_means
+        df[dict_columns['nd']] = nm_means
+        df[dict_columns['on']] = num
+        df[dict_columns['an']] = orig_num
+        df[dict_columns['nn']] = nm_num
+        df[dict_columns['case']] = testcase_ticks
+        df[dict_columns['set']] = testset_name
+        # df = pd.DataFrame({
+        #     'our_method-dispersion': means,
+        #     'adaptive_method-dispersion': orig_means,
+        #     'nomethod-dispersion': nm_means,
+        #     'our_method-number': num,
+        #     'adaptive_method-number': orig_num,
+        #     'nomethod-number': nm_num,
+        #     'testcase': testcase_ticks,
+        #     'testset': testset_name
+        # })
         df_means = pd.DataFrame({
             testset_name: means
+        })
+        df_orig_means = pd.DataFrame({
+            testset_name: orig_means
+        })
+        df_nm_means = pd.DataFrame({
+            testset_name: nm_means
         })
         df_nums = pd.DataFrame({
             testset_name: num
         })
+        df_orig_nums = pd.DataFrame({
+            testset_name: orig_num
+        })
+        df_nm_nums = pd.DataFrame({
+            testset_name: nm_num
+        })
         dfs = pd.concat([dfs, df])
         dfs_means = pd.concat([dfs_means, df_means])
+        dfs_means = pd.concat([dfs_means, df_orig_means])
+        dfs_means = pd.concat([dfs_means, df_nm_means])
         dfs_nums = pd.concat([dfs_nums, df_nums])
-        # # _ylim=(df['position_means'].min(), df['position_means'].max())
-        # # _ylim=(0, df['position_means'].max())
-        # _ylim=(0, 1)
-        # # _yticks=np.linspace(df['position_means'].min(), df['position_means'].max(), 10, endpoint=True)
-        # _yticks=np.linspace(0, 1.0, 10, endpoint=True)
-        # ax1 = df.plot(kind='line', y=df.columns[1], xticks=df.index)
+        dfs_nums = pd.concat([dfs_nums, df_orig_nums])
+        dfs_nums = pd.concat([dfs_nums, df_nm_nums])
+        ax1 = df.plot(kind='bar', y=['our_method-number', 'nomethod-number'],
+                      xticks=df.index, grid=True, rot=30, title="All Detected Mesh Number - {}".format(testset_name))
         # ax1.set_xlim((0, len(df.index)))
-        # ax1.set_ylim(_ylim)
+        _ylim=(0, 64)
+        ax1.set_ylim(_ylim)
         # ax1.set_yticks(_yticks)
-        # ax1.set_ylabel("Vertex position dispersion")
-        # ax1.set_xlabel("camera position No._Lon.-Lat.")
-        # # ax1.set_ylim([df['position_means'].min, df['position_means'].max])
-        # # _ylim2=[df['mesh_nums'].min(), df['mesh_nums'].max()]
+        # _ylim=(df['position_means'].min(), df['position_means'].max())
+        # _ylim=(0, df['position_means'].max())
+        # _yticks=np.linspace(df['position_means'].min(), df['position_means'].max(), 10, endpoint=True)
+        # _yticks=np.linspace(0, 1.0, 10, endpoint=True)
+        ax1.set_xticklabels(df.testcase)
+        ax1.set_ylabel("Mesh number")
+        ax1.set_xlabel("Longitude, Latitude")
+        # ax1.set_ylim([df['position_means'].min, df['position_means'].max])
+        # _ylim2=[df['mesh_nums'].min(), df['mesh_nums'].max()]
         # _ylim2=(0, 64)
-        # ax2 = df.plot(kind='line', y=df.columns[0], grid=True,
-        #               ax=ax1, secondary_y=True, rot=30, title=testset_name)
-        # ax2.set_ylim(_ylim2)
-        # ax2.set_yticks([0, 10, 20, 30, 40, 50, 60, 64])
-        # ax2.set_xlim((0, len(df.index)-1))
-        # ax2.set_xticks(df.index)
-        # ax2.set_xticklabels(df.testcase)
-        # ax2.set_ylabel("Estimated mesh number")
-        # # ax2.tight_layout()
-        # # ax2.set_ylim([df['mesh_nums'].min, df['mesh_nums'].max])
-        # #, fontsize=20, xticks=testcase_ticks, title=testset_name
-        # fig = ax2.get_figure()
-        # fig.tight_layout()
-        # fig.savefig(os.path.join(plot_graph, testset_name + ".png"))
-        # sleep(5)
+        ax1.set_yticks([0, 10, 20, 30, 40, 50, 60, 64])
+        # ax1.legend(loc='uppper right',
+        #            bbox_to_anchor=(1.05, 0.5, 0.5, .100),
+        #            borderaxespad=0.,
+        #            ncol=1,
+        #            mode="expand",
+        #            title="LABEL NAME")
+        fig_1 = ax1.get_figure()
+        fig_1.tight_layout()
+        fig_1.savefig(os.path.join(plot_graph, 'numbers_' + testset_name + ".png"))
+        sleep(5)
 
-    output_dir_plot= myfsys.setup_output_directory(expt_name, 'polot_graph')
+        ax2 = df.plot(kind='bar', y=['our_method-dispersion', 'nomethod-dispersion'],
+                      xticks=df.index, grid=True, rot=30, title="Vertexes Dispersion Means - {}".format(testset_name))
+        # ax2.set_ylim(_ylim2)
+        # ax2.set_xlim((0, len(df.index)-1))
+        ax2.set_xticks(df.index)
+        ax2.set_xticklabels(df.testcase)
+        ax2.set_ylabel("Vertex dispersion")
+        ax2.set_xlabel("Longitude, Latitude")
+        # ax2.tight_layout()
+        # ax2.set_ylim([df['mesh_nums'].min, df['mesh_nums'].max])
+        # ax2.legend(loc='uppper right',
+        #            bbox_to_anchor=(1.05, 0.5, 0.5, .100),
+        #            borderaxespad=0.,
+        #            ncol=1,
+        #            mode="expand",
+        #            title="LABEL NAME")
+        #, fontsize=20, xticks=testcase_ticks, title=testset_name
+        fig = ax2.get_figure()
+        fig.tight_layout()
+        fig.savefig(os.path.join(plot_graph, 'means_' + testset_name + ".png"))
+        sleep(5)
+
+    output_dir_plot = myfsys.setup_output_directory(expt_name, 'polot_graph')
     gene = get_testset(testset_set)
     shapes = ['Plane',
               'Multifaceted',
@@ -157,7 +244,7 @@ if __name__ == "__main__":
     _yticks=np.linspace(0, 1.0, 10, endpoint=True)
     ax3 = dfs_means.plot(kind='line', xticks=df.index, grid=True,
                         rot=30, title="Estimated Vertexes Position Means - All Shape")
-    ax3.set_xlim((0, len(df.index)-1))
+    # ax3.set_xlim((0, len(df.index)-1))
     ax3.set_xticks(df.index)
     ax3.set_xticklabels(df.testcase)
     ax3.set_ylim(_ylim)
@@ -171,10 +258,10 @@ if __name__ == "__main__":
 
     _ylim2=(0, 64)
     ax4 = dfs_nums.plot(kind='line', grid=True,
-                        rot=30, title="Estimated Meshes Number - All Shape")
+                        rot=30, title="Estimated Meshe Number - All Shape")
     ax4.set_ylim(_ylim2)
     ax4.set_yticks([0, 10, 20, 30, 40, 50, 60, 64])
-    ax4.set_xlim((0, len(df.index)-1))
+    # ax4.set_xlim((0, len(df.index)-1))
     ax4.set_xticks(df.index)
     ax4.set_xticklabels(df.testcase)
     ax4.set_ylabel("Estimated mesh number")
