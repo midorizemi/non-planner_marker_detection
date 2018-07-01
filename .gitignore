@@ -53,3 +53,6 @@ fabric.properties
 *.jpg
 *.bmp
 inputs/
+
+venv/*
+!.gitkeep
