@@ -155,12 +155,12 @@ if __name__ == "__main__":
             testset_name: nm_num
         })
         dfs = pd.concat([dfs, df])
-        dfs_means = pd.concat([dfs_means, df_means])
-        dfs_means = pd.concat([dfs_means, df_orig_means])
-        dfs_means = pd.concat([dfs_means, df_nm_means])
-        dfs_nums = pd.concat([dfs_nums, df_nums])
-        dfs_nums = pd.concat([dfs_nums, df_orig_nums])
-        dfs_nums = pd.concat([dfs_nums, df_nm_nums])
+        dfs_means = pd.concat([dfs_means, df_means], sort=False)
+        dfs_means = pd.concat([dfs_means, df_orig_means], sort=False)
+        dfs_means = pd.concat([dfs_means, df_nm_means], sort=False)
+        dfs_nums = pd.concat([dfs_nums, df_nums], sort=False)
+        dfs_nums = pd.concat([dfs_nums, df_orig_nums], sort=False)
+        dfs_nums = pd.concat([dfs_nums, df_nm_nums], sort=False)
         # ax1 = df.plot(kind='bar', y=['our_method-number', 'nomethod-number'],
         #               xticks=df.index, grid=True, rot=30, title="All Detected Mesh Number - {}".format(testset_name))
         # # ax1.set_xlim((0, len(df.index)))

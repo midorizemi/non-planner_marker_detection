@@ -92,8 +92,8 @@ if __name__ == "__main__":
             testset_name: num
         })
         dfs = pd.concat([dfs, df])
-        dfs_means = pd.concat([dfs_means, df_means])
-        dfs_nums = pd.concat([dfs_nums, df_nums])
+        dfs_means = pd.concat([dfs_means, df_means], sort=False)
+        dfs_nums = pd.concat([dfs_nums, df_nums], sort=False)
         # # _ylim=(df['position_means'].min(), df['position_means'].max())
         # # _ylim=(0, df['position_means'].max())
         # _ylim=(0, 1)
