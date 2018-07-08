@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# ------------------------------
+# expt_split_affinesim_combinable_interporation.py
+# を実行する実験用スクリプト
+# pythonの環境はrequirement.txtを参照し，実行環境を整える．
+# ------------------------------
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo $DIR
 export PYTHONPATH="${DIR}/makedb/commons:${DIR}/makedb/make_database:$PYTHONPATH"
@@ -15,6 +21,9 @@ alias deactivate="source $PYENV_ROOT/versions/anaconda3-5.0.0/bin/deactivate"
 source activate py36cv3
 #source activate py36cv34
 
+# ------------------------------
+# 実験用データ・セット周りのパス変数の設定
+# ------------------------------
 PROCJECT_DIR="$( cd "$( dirname "${DIR}" )" && pwd )"
 echo $PROJECT_DIR
 DATA_DIR=$PROCJECT_DIR"/data"

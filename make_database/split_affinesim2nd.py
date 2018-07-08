@@ -2,6 +2,7 @@
 
 '''
 USAGE
+    使わない!
   split_affinesim2nd.py [--feature=<sift|surf|orb|brisk>[-flann]] [ <image1> <image2> ]
 
   --feature  - Feature to use. Can be sift, surf, orb or brisk. Append '-flann'
