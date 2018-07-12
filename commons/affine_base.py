@@ -6,6 +6,7 @@ from __future__ import print_function
 import cv2
 import numpy as np
 import logging
+import commons.affine_simulation_parameters as asparams
 
 # local modules
 from commons.custom_find_obj import filter_matches_wcross as c_filter
@@ -59,43 +60,32 @@ def a_detect(p, detector, img):
 def w_a_detect(args):
     a_detect(*args)
 
-def calc_affine_params(simu: str ='default') -> list:
+def calc_affine_params(simu: str ='default') -> Tuple[float, float]:
     """
     Calculation affine simulation parameter tilt and phi
     You get list object of sets (tilt, phi) as taple
     :param simu: set simulation taype
     :return: list of taple
     """
-    params = [(1.0, 0.0)]
     if simu == 'default' or simu == 'asift' or simu is None:
-        for t in 2**(0.5*np.arange(1, 6)):
-            for phi in np.arange(0, 180, 72.0 / t):
-                params.append((t, phi))
+        return asparams.asift_basic_parameter_gene()
 
     if simu == 'degrees':
         """半周する"""
-        for t in np.reciprocal(np.cos(np.radians(np.arange(10, 90, 10)))):
-            for phi in np.arange(0, 180, 20):
-                params.append((t, phi))
+        return asparams.ap_hemisphere_gene(max_t=90, offset_t=10, max_p=180, offset_p=10)
 
     if simu == 'degrees-full':
         """一周する"""
-        for t in np.reciprocal(np.cos(np.radians(np.arange(10, 90, 10)))):
-            for phi in np.arange(0, 360, 10):
-                params.append((t, phi))
+        return asparams.ap_hemisphere_gene(max_t=90, offset_t=10, max_p=360, offset_p=10)
 
     if simu == 'test2':
         logger.debug("This simulation is Test2 type")
-        for t in np.reciprocal(np.cos(np.radians(np.arange(10, 11, 10)))):
-            for phi in np.arange(0, 21, 20):
-                params.append((t, phi))
+        return asparams.ap_hemisphere_gene(max_t=11, offset_t=10, max_p=21, offset_p=10)
 
     if simu == 'test' or simu == 'sift':
         logger.debug("This simulation is Test type")
-        pass
+        return 1.0, 0.0
 
-    logger.info("params: %d" % (len(params)))
-    return params
 
 
 def affine_detect(detector, img, mask=None, pool=None, simu_param=None):
