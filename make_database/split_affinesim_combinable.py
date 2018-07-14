@@ -39,6 +39,7 @@ from make_database.split_affinesim import affine_load_into_mesh
 from make_database.split_affinesim import match_with_cross
 from make_database.split_affinesim import count_keypoints
 
+
 def combine_mesh(splt_k, splt_d, temp_inf):
     """
     :type temp_inf: TmpInf
@@ -110,8 +111,10 @@ def combine_mesh_compact(splt_k, splt_d, temp_inf):
     m_sd = compact_merged_splt(sd)
     return m_sk, m_sd, mesh_k_num, merged_map
 
+
 def compact_merged_splt(m_s):
     return [x for x in m_s if x is not None]
+
 
 def analysis_num(mesh_k_num):
     # 分析１：特徴点数のバラつき
@@ -165,10 +168,12 @@ def test_module():
     temp_inf = TmpInf(**template_information)
     return temp_inf, imgQ, imgT, detector, matcher
 
+
 def get_id_list(_id, tmp_inf, merged_mesh_map: np.ndarray):
     flag = np.where(merged_mesh_map == _id, True, False)
     map = tmp_inf.get_mesh_map()
     return map[flag].tolist()
+
 
 def explore_meshes(imgT, temp_inf, Hs=None, list_merged_mesh_id=None, mesh_map=None):
     hT, wT = imgT.shape[:2]
@@ -194,11 +199,12 @@ def draw_matches_for_meshes(imgT, imgQ, temp_inf, Hs=None, vis=None, list_merged
         vis[:h1, :w1] = imgT
         vis[:h2, w1:w1 + w2] = imgQ
         vis = cv2.cvtColor(vis, cv2.COLOR_GRAY2BGR)
-    meshes = explore_meshes(imgT,temp_inf, Hs, list_merged_mesh_id, merged_map)
+    meshes = explore_meshes(imgT, temp_inf, Hs, list_merged_mesh_id, merged_map)
     for mesh_corners in meshes:
         cv2.polylines(vis, [mesh_corners], True, (25, 94, 255), thickness=3, lineType=cv2.LINE_AA)
 
     return vis
+
 
 def explore_match_for_meshes(win, imgT, imgQ, kp_pairs, temp_inf=None, status=None, Hs=None,
                              list_merged_mesh_id=None, merged_map=None):
@@ -209,7 +215,7 @@ def explore_match_for_meshes(win, imgT, imgQ, kp_pairs, temp_inf=None, status=No
     vis[:h2, w1:w1 + w2] = imgQ
     vis = cv2.cvtColor(vis, cv2.COLOR_GRAY2BGR)
 
-    vis = draw_matches_for_meshes(imgT, imgQ, temp_inf,  Hs, vis,
+    vis = draw_matches_for_meshes(imgT, imgQ, temp_inf, Hs, vis,
                                   list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
     vis0 = vis.copy()
     p1, p2 = [], []  # python 2 / python 3 change of zip unpacking
@@ -243,6 +249,7 @@ def explore_match_for_meshes(win, imgT, imgQ, kp_pairs, temp_inf=None, status=No
     green = (0, 255, 0)
     red = (0, 0, 255)
     kp_color = (51, 103, 236)
+
     def onmouse(event, x, y, flags, param):
         cur_vis = vis
         if flags & cv2.EVENT_FLAG_LBUTTON:
@@ -266,10 +273,12 @@ def explore_match_for_meshes(win, imgT, imgQ, kp_pairs, temp_inf=None, status=No
     # cv2.setMouseCallback(win, onmouse)
     return vis
 
+
 if __name__ == '__main__':
     print(__doc__)
 
     import sys, getopt
+
     opts, args = getopt.getopt(sys.argv[1:], '', ['feature='])
     opts = dict(opts)
     feature_name = opts.get('--feature', 'sift')
@@ -277,6 +286,7 @@ if __name__ == '__main__':
         fn1, fn2 = args
     except:
         import os
+
         dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
         fn1 = os.path.abspath(os.path.join(dir, 'data/templates/qrmarker.png'))
         fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
@@ -332,7 +342,8 @@ if __name__ == '__main__':
     with Timer('estimation'):
         Hs, statuses, pairs = calclate_Homography4splitmesh(mesh_pQ, mesh_pT, mesh_pairs, median=median)
 
-    vis = draw_matches_for_meshes(imgQ, imgT, temp_inf=temp_inf, Hs=Hs, list_merged_mesh_id=list_merged_mesh_id, merged_map=merged_map)
+    vis = draw_matches_for_meshes(imgQ, imgT, temp_inf=temp_inf, Hs=Hs, list_merged_mesh_id=list_merged_mesh_id,
+                                  merged_map=merged_map)
     cv2.imshow('view weak meshes', vis)
     cv2.imwrite('qrmarker_detection_merged.png', vis)
     cv2.waitKey()

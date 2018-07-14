@@ -31,6 +31,7 @@ from commons.custom_find_obj import calclate_Homography4splitmesh
 from make_database import make_splitmap as mks
 from commons import my_file_path_manager as myfm
 
+
 def split_kd(keypoints, descrs, splt_num):
     tmp = TmpInf()
     split_tmp_img = tmp.make_splitmap()
@@ -63,6 +64,7 @@ def split_kd(keypoints, descrs, splt_num):
 
     return splits_k, splits_d
 
+
 def affine_load_into_mesh(template_fn, splt_num):
     import os
     pikle_path = myfm.get_pikle_path(template_fn)
@@ -72,10 +74,12 @@ def affine_load_into_mesh(template_fn, splt_num):
     kp, des = load_pikle(pikle_path)
     return split_kd(kp, des, splt_num)
 
+
 def affine_detect_into_mesh(detector, split_num, img1, mask=None, simu_param='default'):
     pool = ThreadPool(processes=cv2.getNumberOfCPUs())
     kp, desc = affine_detect(detector, img1, mask, pool=pool, simu_param=simu_param)
     return split_kd(kp, desc, split_num)
+
 
 def match_with_cross(matcher, meshList_descQ, meshList_kpQ, descT, kpT):
     meshList_pQ = []
@@ -90,16 +94,19 @@ def match_with_cross(matcher, meshList_descQ, meshList_kpQ, descT, kpT):
         meshList_pairs.append(pairs)
     return meshList_pQ, meshList_pT, meshList_pairs
 
+
 def count_keypoints(splt_kpQ):
     len_s_kp = 0
     for kps in splt_kpQ:
         len_s_kp += len(kps)
     return len_s_kp
 
+
 if __name__ == '__main__':
     print(__doc__)
 
     import sys, getopt
+
     opts, args = getopt.getopt(sys.argv[1:], '', ['feature='])
     opts = dict(opts)
     feature_name = opts.get('--feature', 'sift')
@@ -107,6 +114,7 @@ if __name__ == '__main__':
         fn1, fn2 = args
     except:
         import os
+
         dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
         fn1 = os.path.abspath(os.path.join(dir, 'data/templates/qrmarker.png'))
         fn2 = os.path.abspath(os.path.join(dir, 'data/inputs/unittest/smpl_1.414214_152.735065.png'))
@@ -146,13 +154,13 @@ if __name__ == '__main__':
         pairs, H, status = calclate_Homography(pQ, pT, pairs)
         Hs.append(H)
         statuses.append(status)
-        if np.sum(status)/len(status) >= 0.4:
+        if np.sum(status) / len(status) >= 0.4:
             Hs_stable.append(H)
         else:
             Hs_stable.append(None)
         for p in pairs:
             kp_pairs_long.append(p)
-            if np.sum(status)/len(status) >= 0.4:
+            if np.sum(status) / len(status) >= 0.4:
                 kp_pairs_long_stable.append(p)
 
     vis = draw_matches_for_meshes(imgQ, imgT, Hs=Hs)
@@ -167,4 +175,3 @@ if __name__ == '__main__':
     cv2.imwrite('qr1_mesh_line.png', viw)
     cv2.waitKey()
     cv2.destroyAllWindows()
-
