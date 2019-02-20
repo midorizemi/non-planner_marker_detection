@@ -26,7 +26,7 @@ declare -a array=("qrmarker" "nabe")
 #declare -a array=("glass" "ornament" "menko")
 declare -a prefix=("pl_" "mltf_" "crv_")
 
-data_flag="cgs"
+data_flag="raw"
 #data_flag="real"
 ext=".png"
 
