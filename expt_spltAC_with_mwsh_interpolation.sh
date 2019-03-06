@@ -5,26 +5,17 @@
 # を実行する実験用スクリプト
 # pythonの環境はrequirement.txtを参照し，実行環境を整える．
 # ------------------------------
-
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-echo $DIR
-export PYTHONPATH="${DIR}/makedb/commons:${DIR}/makedb/make_database:$PYTHONPATH"
-export PYTHON_PATH="${DIR}/makedb/commons:${DIR}/makedb/make_database:$PYTHON_PATH"
-
+export PYTHONPATH="$(pwd)/commons:$(pwd)/make_database:${PYTHONPATH}"
+export PYTHON_PATH="$(pwd)/commons:$(pwd)/make_database:${PYTHON_PATH}"
 # ------------------------------
-#Aliases settings
+# Python activate
 # ------------------------------
-#alias blender="$HOME/Sources/blender-2.78a/blender"
-alias activate="source $PYENV_ROOT/versions/anaconda3-5.0.0/bin/activate"
-alias deactivate="source $PYENV_ROOT/versions/anaconda3-5.0.0/bin/deactivate"
-
-source activate py36cv3
-#source activate py36cv34
+source venv/bin/activate
 
 # ------------------------------
 # 実験用データ・セット周りのパス変数の設定
 # ------------------------------
-PROCJECT_DIR="$( cd "$( dirname "${DIR}" )" && pwd )"
+PROCJECT_DIR=`dirname $(pwd)`
 echo $PROJECT_DIR
 DATA_DIR=$PROCJECT_DIR"/data"
 TEMPLATE_DIR=$DATA_DIR"/templates"
@@ -64,6 +55,7 @@ do
             python expt_split_affinesim_combinable_interporation.py --feature=sift $template_full_path $input_file $prf $testset
             #echo "result>>> "$op
             COUNT=$((++COUNT))
+            break
         done
 #        break
     done

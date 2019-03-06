@@ -8,6 +8,8 @@ import numpy as np
 import logging
 import commons.affine_simulation_parameters as asparams
 
+from typing import TypeVar, Iterable, Tuple, List
+
 # local modules
 from commons.custom_find_obj import filter_matches_wcross as c_filter
 
@@ -60,6 +62,7 @@ def a_detect(p, detector, img):
 def w_a_detect(args):
     a_detect(*args)
 
+
 def calc_affine_params(simu: str ='default') -> Tuple[float, float]:
     """
     Calculation affine simulation parameter tilt and phi
@@ -84,7 +87,7 @@ def calc_affine_params(simu: str ='default') -> Tuple[float, float]:
 
     if simu == 'test' or simu == 'sift':
         logger.debug("This simulation is Test type")
-        return 1.0, 0.0
+        return [[1.0, 0.0]]
 
 
 
@@ -103,7 +106,9 @@ def affine_detect(detector, img, mask=None, pool=None, simu_param=None):
         keypoints, descrs = detector.detectAndCompute(img, mask)
         return keypoints, np.array(descrs)
 
-    def f(p):
+    def f(p: Tuple):
+        print(p)
+        print("----------------------------")
         t, phi = p
         timg, tmask, Ai = affine_skew(t, phi, img, mask)
         keypoints, descrs = detector.detectAndCompute(timg, tmask)

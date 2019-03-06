@@ -10,6 +10,62 @@
 
 実験スクリプト  expt_split_affinesim_combinable_with_interporation.py
 
+## 実行環境
+Python3.6をインストールしておくこと
+PiPの最新バージョンをインストールしておくこと
+
+`requirements` ファイルを用意したので，Linux環境であればターミナルを開いて
+各自のシェル環境で下記を実行する．
+Pythonスクリプト実行時にパッケージでエラーが出たら都度インストールする．
+```
+pip install -r requirements
+```
+
+### Windowsの場合
+※ 注意 ※
+この方法をとった場合，Anaconda等のほかディストリビューションのpythonと互換性はなくなります．
+必ず，WSLターミナルからpythonを実行するようにしてください．
+
+まずは，このページを参考にWSLを使えるようにする．
+https://qiita.com/Aruneko/items/c79810b0b015bebf30bb
+次に，プロキシ設定や日本語化，タイムゾーンを東京に合わせる．
+参考ページ：（https://linuxfan.info/wsl-setup-guide#Ubuntu-3）
+
+``` bash
+domain=proxy.uec.ac.jp:8080
+echo "export http_proxy=http://${domain}" >> ~/.bashrc
+echo "export https_proxy=http://${domain}" >> ~/.bashrc
+sudo sh -c "echo 'http_proxy=http://${domain}' >> /etc/environment"
+sudo sh -c "echo 'https_proxy=http://${domain}' >> /etc/environment"
+echo "proxy = proxy.uec.ac.jp:8080" > ~/.curlrc
+sudo dpkg-reconfigure tzdata
+sudo apt install -y language-pack-ja
+sudo update-locale LANG=ja_JP.UTF-8
+sudo apt-get update
+```
+
+続いて下記を実行する．
+
+``` bash
+sudo apt-get install python3 python3-dev python3-venv libsm6 libxrender1 libfontconfig1
+cd /mnt/c/Users/<user-name>/<path to makedb directoy>
+python3 -m venv --without-pip venv && cd $_
+source bin/activate
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+python3 get-pip.py
+```
+
+ローカルディレクトリで独自のpython環境を構築する準備が整いました．
+下記を実行してください．
+
+``` bash
+echo "alias venvact='source venv/bin/activate'" >> ~/.bashrc && source $_
+cd /mnt/c/Users/<user-name>/<path to makedb directoy>
+python3 -m venv venv
+venvact
+pip install -r requirements
+```
+
 ## 機能について
 
 ### common
@@ -30,7 +86,7 @@
 問題が発生したらgitで戻って欲しい．
 
 ## その他
-実際の実験はshスクリプトを実行する．
+実際の実験はbashスクリプトを実行する．
 手法はexpt_から始まるスクリプトごとに異なる．
 メンテナンスされているパイソンスクリプトは次のとおりである．
 
@@ -41,4 +97,3 @@ expt_split_affinesim_combinable_with_interporation
 
 それ以外は，ちょい書きで作ったものなので動作保証はない．
 トリッキーなことはしていないので，ソースコードを読んでもらえたらわかると思われる．
-

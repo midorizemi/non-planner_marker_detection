@@ -106,7 +106,7 @@ if __name__ == '__main__':
 
     pool = splta_c.ThreadPool(processes=splta_c.cv2.getNumberOfCPUs())
     with splta_c.Timer('Detection'):
-        kpT, dscT = splta_c.affine_detect(detector, imgT, pool=pool, simu_param='test')
+        kpT, dscT = splta_c.affine_detect(detector, imgT, pool=None, simu_param='test')
 
     fn, ext = os.path.splitext(os.path.basename(fn2_full))
     testset_name = os.path.basename(os.path.dirname(fn2_full))
@@ -164,7 +164,7 @@ if __name__ == '__main__':
 
     # 検出不可能メッシュ
     denied_mesh = list(np.count_nonzero(merged_map == list_merged_mesh_id[i]) for i, match in enumerate(mesh_pQ)
-                       if m_in.is_detectable(len(match), median))
+                       if m_in.is_detectable(len(match), median) and len(list_merged_mesh_id) > i)
     denied_num = temp_inf.get_splitnum() - sum(denied_mesh)
     intermediate_testcase_dir = splta.myfm.setup_output_directory(interpolation_image_dir, fn)
     mesh_corners, good_Hs, estimated = m_in.interpolate_mesh(denied_num, Hs, temp_inf, output=True,
