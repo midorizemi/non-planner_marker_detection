@@ -66,6 +66,11 @@ venvact
 pip install -r requirements
 ```
 
+## 実行
+```bash
+bash expt_split_affinesim_combinable_with_interporation.py
+```
+
 ## 機能について
 
 ### common
@@ -97,3 +102,7 @@ expt_split_affinesim_combinable_with_interporation
 
 それ以外は，ちょい書きで作ったものなので動作保証はない．
 トリッキーなことはしていないので，ソースコードを読んでもらえたらわかると思われる．
+
+## 最後に
+わからないことがあったら，こちらのリポジトリにissueを投げてください．
+https://github.com/midorizemi/non-planner_marker_detection
