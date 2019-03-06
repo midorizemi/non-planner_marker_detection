@@ -105,4 +105,6 @@ expt_split_affinesim_combinable_with_interporation
 
 ## 最後に
 わからないことがあったら，こちらのリポジトリにissueを投げてください．
-https://github.com/midorizemi/non-planner_marker_detection
+イシュー：https://github.com/midorizemi/non-planner_marker_detection/issues
+
+管理レポジトリ：https://github.com/midorizemi/non-planner_marker_detection
